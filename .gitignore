@@ -1,0 +1,11 @@
+# Firebase ローカル設定
+.firebase/
+firebase-debug.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# エディタ
+.vscode/
+*.code-workspace
