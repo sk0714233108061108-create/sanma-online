@@ -25,7 +25,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
   position:relative;width:100%;max-width:430px;height:100dvh;
   margin:0 auto;background:#000c00;overflow:hidden;
   font-family:'Courier New',monospace;color:#00ff41;
-  display:flex;flex-direction:column;
+  flex-direction:column;
+  /* display は _launchGame が制御する（_returnToPlatform で none に戻す） */
 }
 #app::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(transparent,transparent 2px,rgba(0,0,0,.1) 2px,rgba(0,0,0,.1) 4px);pointer-events:none;z-index:9999;}
 #app::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 52%,rgba(0,0,0,.72) 100%);pointer-events:none;z-index:9998;}
@@ -713,7 +714,7 @@ window.addEventListener('error', function(e){
 // multiCfg: { roomId, guestSeats:[1,2], seatOf:{userId:seatIdx} }
 window._launchGame = function(userId, displayName, mode, multiCfg) {
   document.getElementById('platform-root').style.display = 'none';
-  document.getElementById('app').style.display = '';
+  document.getElementById('app').style.display = 'flex';
   window._platformUser = { id: userId, displayName: displayName, mode: mode };
   window._gameStats   = { agari: 0, houju: 0, yakuman: [], rounds: 0 };
   window._multiCfg    = multiCfg || null;
