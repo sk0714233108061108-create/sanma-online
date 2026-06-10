@@ -1523,7 +1523,17 @@ function basePts(fu,han){
   if(han>=13)return 32000;if(han>=11)return 24000;if(han>=8)return 16000;if(han>=6)return 12000;if(han>=5)return 8000;
   return Math.min(fu*Math.pow(2,han+2),8000);
 }
-function ronPay(fu,han,dealer){if(han>=13)return dealer?48000:32000;return Math.max(Math.ceil(basePts(fu,han)*(dealer?2:1)/100)*100,1000);}
+function ronPay(fu,han,dealer){
+  // 役満・三倍満・倍満・跳満は固定点
+  if(han>=13)return dealer?48000:32000;
+  if(han>=11)return dealer?36000:24000;
+  if(han>=8) return dealer?24000:16000;
+  if(han>=6) return dealer?18000:12000;
+  // 基本点 = fu × 2^(han+2)、子ロン=×4、親ロン=×6（満貫上限）
+  const base=fu*Math.pow(2,han+2);
+  if(dealer)return Math.max(Math.min(Math.ceil(base*6/100)*100,12000),1500);
+  return Math.max(Math.min(Math.ceil(base*4/100)*100,8000),1000);
+}
 function tsumoPay(fu,han){if(han>=13)return 8000;return Math.max(Math.ceil(basePts(fu,han)/2/100)*100,500);}
 
 // ═══════════════════════════════════════════════════
@@ -1596,7 +1606,7 @@ function doDrawTile(pi){
   if(!G.wall.length){handleRyuukyoku();return;}
   const p=G.players[pi];const t=G.wall.shift();
   p.hand.push(t);p.drawn=t;
-  p.hand=sortHand(p.hand); // ← 自動並べ替え
+  if(pi!==0) p.hand=sortHand(p.hand); // CPUのみソート（プレイヤーはツモ牌を末尾に残す）
   G.isLastTile=(G.wall.length===0); // 海底判定
   G.cur=pi;
   if(pi===0){
@@ -1644,7 +1654,7 @@ function doCpuTurn(pi){
   }
   const di=aiBestDiscard(p.hand);
   const after=p.hand.filter((_,i)=>i!==(di===null?p.hand.length-1:di));
-  if(!p.riichi&&!p.melds.length&&isTenpai(after)&&p.score>=1000){
+  if(!p.riichi&&!p.melds.length&&isTenpai(after)&&p.score>=1000&&!G.isLastTile){
     p.riichi=true;p.score-=1000;G.kyotaku+=1000;p.ippatsu=true;p.doubleRiichi=!G.anyDiscardMade;
     G.msg=p.name+' リーチ！';sfx('riichi');voice('リーチ');
     setTimeout(()=>{p.hand.splice(di===null?p.hand.length-1:di,1).forEach(t=>{p.discards.push(t);p.drawn=null;sfx('disc');G.anyDiscardMade=true;G.lastDiscard=t;G.lastDiscardPl=pi;G.phase='after_discard';render();setTimeout(()=>processAfterDiscard(pi,t),200);});},400);
@@ -1690,7 +1700,7 @@ function processAfterDiscard(fromPl,tile){
     // ホストのクレームUIも同時に表示
     if(humanRon||humanPon||humanDaiminkan){
       G.claimState={tile,from:fromPl,canRon:humanRon,canPon:humanPon,canDaiminkan:humanDaiminkan};
-      G.phase='claiming';
+      G.phase='claiming';startClaimTimer();
     } else {
       G.claimState=null;G.phase='guest_claiming';G.msg='クレーム待機中...';
     }
@@ -1698,7 +1708,7 @@ function processAfterDiscard(fromPl,tile){
     window._onGuestClaimPhase(fromPl,tile,guestEligible);
     return;
   }
-  if(humanRon||humanPon||humanDaiminkan){G.claimState={tile,from:fromPl,canRon:humanRon,canPon:humanPon,canDaiminkan:humanDaiminkan};G.phase='claiming';render();return;}
+  if(humanRon||humanPon||humanDaiminkan){G.claimState={tile,from:fromPl,canRon:humanRon,canPon:humanPon,canDaiminkan:humanDaiminkan};G.phase='claiming';render();startClaimTimer();return;}
   for(let p=1;p<=2;p++){
     if(p===fromPl)continue;
     const pl=G.players[p];
@@ -1796,6 +1806,7 @@ function doPlayerKan(kanInfo){
 
 function doPlayerDaiminkan(){
   if(G.phase!=='claiming'||!G.claimState?.canDaiminkan)return;
+  clearClaimTimer();
   const{tile,from}=G.claimState;const p=G.players[0];
   let rem=0;
   p.hand=p.hand.filter(t=>{if(rem<3&&tKey(t)===tKey(tile)){rem++;return false;}return true;});
@@ -1873,6 +1884,38 @@ function _autoTsumogiri(){
   doPlayerDiscard();
 }
 
+// ── クレームタイマー（ポン・カン・ロン申告待ち 10秒で自動スキップ）──
+let _clCountTimer = null;
+let _clCountdown  = 0;
+
+function startClaimTimer(){
+  clearClaimTimer();
+  _clCountdown = 10;
+  _updateClaimDisplay();
+  _clCountTimer = setInterval(()=>{
+    _clCountdown--;
+    _updateClaimDisplay();
+    if(_clCountdown <= 0){
+      clearClaimTimer();
+      if(G.phase === 'claiming') doPlayerSkip();
+    }
+  }, 1000);
+}
+
+function clearClaimTimer(){
+  if(_clCountTimer !== null){ clearInterval(_clCountTimer); _clCountTimer = null; }
+  _clCountdown = 0;
+  const el = document.getElementById('plTimer');
+  if(el){ el.textContent=''; el.className='hidden'; }
+}
+
+function _updateClaimDisplay(){
+  const el = document.getElementById('plTimer');
+  if(!el) return;
+  el.textContent = 'AUTO: ' + _clCountdown;
+  el.className = _clCountdown <= 3 ? 'urgent' : '';
+}
+
 function doPlayerSelectTile(idx){
   if(G.phase!=='player_turn')return;
   const p=G.players[0];
@@ -1893,6 +1936,7 @@ function doPlayerDiscard(){
   const drawnIdx=p.hand.findIndex(t=>t.id===drawnId);
   if(p.riichi&&G.selIdx!==drawnIdx){G.msg='リーチ中は摸切のみ';render();return;}
   const t=p.hand.splice(G.selIdx,1)[0];
+  if(drawnId!==-1 && t.id!==drawnId) p.hand=sortHand(p.hand); // 手牌打ち→ツモ牌を統合ソート
   p.discards.push(t);p.drawn=null;G.selIdx=-1;sfx('disc');
   if(p.riichi&&p.ippatsu)p.ippatsu=false; // 一発消滅
   if(!p.riichi)p.furiten=false; // 一時フリテン解除（打牌でリセット）
@@ -1910,7 +1954,9 @@ function doPlayerRiichi(){
   p.riichi=true;p.score-=1000;G.kyotaku+=1000;
   p.ippatsu=true;p.doubleRiichi=!G.anyDiscardMade;
   G.msg='立直！';sfx('riichi');voice('リーチ');
+  const drawnIdR=p.drawn?p.drawn.id:-1;
   const t=p.hand.splice(G.selIdx,1)[0];
+  if(drawnIdR!==-1 && t.id!==drawnIdR) p.hand=sortHand(p.hand); // 手牌打ちはソート統合
   p.discards.push(t);p.drawn=null;G.selIdx=-1;
   G.anyDiscardMade=true;
   G.lastDiscard=t;G.lastDiscardPl=0;G.phase='after_discard';render();
@@ -1924,10 +1970,12 @@ function doPlayerTsumo(){
 }
 function doPlayerRon(){
   if(G.phase!=='claiming'||!G.claimState?.canRon)return;
+  clearClaimTimer();
   const{tile,from}=G.claimState;G.claimState=null;handleWin(0,tile,'ron',from);
 }
 function doPlayerPon(){
   if(G.phase!=='claiming'||!G.claimState?.canPon)return;
+  clearClaimTimer();
   const{tile,from}=G.claimState;const p=G.players[0];let rem=0;
   p.hand=p.hand.filter(t=>{if(rem<2&&tKey(t)===tKey(tile)){rem++;return false;}return true;});
   p.melds.push({type:'pon',tile,fromPl:from});
@@ -1937,6 +1985,7 @@ function doPlayerPon(){
 }
 function doPlayerSkip(){
   if(G.phase!=='claiming')return;
+  clearClaimTimer();
   const p=G.players[0];
   // 見逃しフリテン
   if(G.claimState.canRon){
@@ -1970,11 +2019,9 @@ function handleWin(wi,tile,type,loser){
   const ch={0:0,1:0,2:0};
   if(type==='ron'){const pts=ronPay(fu,han,w.wind===1)+G.honba*300+G.kyotaku;ch[wi]+=pts;ch[loser]-=pts;}
   else{
-    // ツモ支払い（ツモ損なし・三麻標準）
-    // 親ツモ: 各basePts×3/4 × 2人 = 親ロン点（満貫→各6000、計12000）
-    // 子ツモ: 各basePts×1/2 × 2人 = 子ロン点（満貫→各4000、計8000）
+    // ツモ支払い（ツモ損なし・三麻標準）= ロン点÷2を2人で払う
     const isDealer=w.wind===1;
-    const each=Math.max(Math.ceil(basePts(fu,han)*(isDealer?0.75:0.5)/100)*100,500)+G.honba*100;
+    const each=Math.max(Math.ceil(ronPay(fu,han,isDealer)/2/100)*100,500)+G.honba*100;
     let tot=0;
     for(let p=0;p<3;p++){
       if(p===wi)continue;
@@ -2306,7 +2353,7 @@ function renderAct(){
         bar.appendChild(mkBtn('カン','pon',()=>doPlayerKan(k)));
       });
     }
-    if(!p.riichi&&!p.melds.length&&p.drawn!==null&&G.selIdx>=0&&p.score>=1000){
+    if(!p.riichi&&!p.melds.length&&p.drawn!==null&&G.selIdx>=0&&p.score>=1000&&!G.isLastTile){
       if(isTenpai(p.hand.filter((_,i)=>i!==G.selIdx)))bar.appendChild(mkBtn('立直','pon',doPlayerRiichi));
     }
     if(G.selIdx>=0)bar.appendChild(mkBtn('打牌','on',doPlayerDiscard));
