@@ -69,6 +69,9 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 .plRiichi{color:#ffaa00;text-shadow:0 0 6px #ffaa00;font-size:10.8px}
 .plMelds{display:flex;gap:2px;margin-bottom:2px;min-height:0}
 .plHand{display:flex;gap:1px;align-items:flex-end;justify-content:center;min-height:46px;padding-bottom:2px;overflow:visible}
+#plTimer{font-size:10px;letter-spacing:2px;text-align:right;padding-right:6px;height:13px;line-height:13px;color:#ff8822;transition:color .3s}
+#plTimer.urgent{color:#ff2222;animation:blink .4s infinite}
+#plTimer.hidden{visibility:hidden}
 
 .actBar{flex:0 0 50px;margin-top:auto;display:flex;gap:3px;padding:4px 5px;align-items:center;background:#000600;border-top:1px solid #001800}
 .aBtn{flex:1;height:42px;background:transparent;border:1px solid #115522;color:#aaffee;font-family:'Courier New',monospace;font-size:14.4px;cursor:pointer;letter-spacing:1px;transition:all .1s}
@@ -489,6 +492,7 @@ window.addEventListener('error', function(e){
     <div class="waitStrip" id="waitStrip"></div>
     <div class="plArea">
       <div class="plInfo"><span id="plNm">あなた</span><span id="plSc">25000点</span><span id="plRiichi" class="plRiichi hidden blk">◀リーチ▶</span></div>
+      <div id="plTimer" class="hidden"></div>
       <div class="plMelds" id="plMelds"></div>
       <div class="plHand" id="plHand"></div>
     </div>
@@ -1417,6 +1421,7 @@ function doDrawTile(pi){
       return;
     }
     G.msg='あなたの番です...';render();
+    startPlayerTimer(); // 5秒猶予 → 10カウント → 自動ツモ切り
   }
   // ── ゲスト人間シート: Firebaseアクションを待機 ──
   else if(typeof window._isGuestSeat==='function'&&window._isGuestSeat(pi)){
@@ -1588,6 +1593,7 @@ function execKan(pi,kanInfo){
 // プレイヤーのカン宣言
 function doPlayerKan(kanInfo){
   if(G.phase!=='player_turn')return;
+  clearPlayerTimer();
   execKan(0,kanInfo);
   G.selIdx=G.players[0].hand.length-1; // 嶺上牌を選択状態に
   render();
@@ -1622,6 +1628,57 @@ function doCpuDaiminkan(pi,tile,fromPl){
   setTimeout(()=>doCpuTurn(pi),700);
 }
 
+// ═══════════════════════════════════════════════════
+// 打牌タイマー（5秒猶予 → 10カウント → 自動ツモ切り）
+// ═══════════════════════════════════════════════════
+let _plGraceTimer = null;   // 5秒猶予用 setTimeout ID
+let _plCountTimer = null;   // カウントダウン用 setInterval ID
+let _plCountdown  = 0;      // 現在のカウント値
+
+function startPlayerTimer(){
+  clearPlayerTimer();
+  const el = document.getElementById('plTimer');
+  if(el){ el.textContent=''; el.className='hidden'; }
+  // 5秒猶予後にカウントダウン開始
+  _plGraceTimer = setTimeout(()=>{
+    _plCountdown = 10;
+    _updateTimerDisplay();
+    _plCountTimer = setInterval(()=>{
+      _plCountdown--;
+      _updateTimerDisplay();
+      if(_plCountdown <= 0){
+        clearPlayerTimer();
+        _autoTsumogiri();
+      }
+    }, 1000);
+  }, 5000);
+}
+
+function clearPlayerTimer(){
+  if(_plGraceTimer !== null){ clearTimeout(_plGraceTimer); _plGraceTimer = null; }
+  if(_plCountTimer !== null){ clearInterval(_plCountTimer); _plCountTimer = null; }
+  _plCountdown = 0;
+  const el = document.getElementById('plTimer');
+  if(el){ el.textContent=''; el.className='hidden'; }
+}
+
+function _updateTimerDisplay(){
+  const el = document.getElementById('plTimer');
+  if(!el) return;
+  el.textContent = 'AUTO: ' + _plCountdown;
+  el.className = _plCountdown <= 3 ? 'urgent' : '';
+}
+
+function _autoTsumogiri(){
+  if(G.phase !== 'player_turn') return;
+  const p = G.players[0];
+  const drawnId = p.drawn ? p.drawn.id : -1;
+  const drawnIdx = p.hand.findIndex(t => t.id === drawnId);
+  // ツモ牌があればツモ切り、なければ最後の牌を切る（ポン後等）
+  G.selIdx = drawnIdx >= 0 ? drawnIdx : p.hand.length - 1;
+  doPlayerDiscard();
+}
+
 function doPlayerSelectTile(idx){
   if(G.phase!=='player_turn')return;
   const p=G.players[0];
@@ -1636,6 +1693,7 @@ function doPlayerSelectTile(idx){
 }
 function doPlayerDiscard(){
   if(G.phase!=='player_turn'||G.selIdx<0)return;
+  clearPlayerTimer();
   const p=G.players[0];
   const drawnId=p.drawn?p.drawn.id:-1;
   const drawnIdx=p.hand.findIndex(t=>t.id===drawnId);
@@ -1650,6 +1708,7 @@ function doPlayerDiscard(){
 }
 function doPlayerRiichi(){
   if(G.phase!=='player_turn'||G.selIdx<0)return;
+  clearPlayerTimer();
   const p=G.players[0];
   if(p.melds.length>0){G.msg='副露後はリーチ不可';render();return;}
   if(p.score<1000){G.msg='点数不足';render();return;}
@@ -1665,6 +1724,7 @@ function doPlayerRiichi(){
 }
 function doPlayerTsumo(){
   if(G.phase!=='player_turn')return;
+  clearPlayerTimer();
   if(!canTsumo(G.players[0])){G.msg='和了できません';render();return;}
   handleWin(0,null,'tsumo',-1);
 }
@@ -1679,6 +1739,7 @@ function doPlayerPon(){
   p.melds.push({type:'pon',tile,fromPl:from});
   G.players.forEach(pl=>pl.ippatsu=false); // ポン宣言で一発消滅
   G.msg='ポン！';sfx('pon');voice('ポン');G.claimState=null;G.phase='player_turn';p.drawn=null;render();
+  startPlayerTimer(); // ポン後も打牌タイマーを開始
 }
 function doPlayerSkip(){
   if(G.phase!=='claiming')return;
