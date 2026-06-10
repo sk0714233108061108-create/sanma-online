@@ -720,7 +720,7 @@ window._launchGame = function(userId, displayName, mode, multiCfg) {
   document.getElementById('platform-root').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   window._platformUser = { id: userId, displayName: displayName, mode: mode };
-  window._gameStats   = { agari: 0, houju: 0, yakuman: [], rounds: 0 };
+  window._gameStats   = { agari: 0, houju: 0, yakuman: [], rounds: 0, tenpai: 0 };
   window._multiCfg    = multiCfg || null;
 };
 
@@ -748,8 +748,9 @@ window._notifyGameEvent = function(type, data) {
     window._gameStats.agari++;
     if (data && data.isYakuman) window._gameStats.yakuman.push(data.yakuName);
   }
-  if (type === 'houju') window._gameStats.houju++;
-  if (type === 'win')   window._gameStats.playerWon = data && data.winner === 0;
+  if (type === 'houju')  window._gameStats.houju++;
+  if (type === 'tenpai') window._gameStats.tenpai++;
+  if (type === 'win')    window._gameStats.playerWon = data && data.winner === 0;
 };
 
 // ─── マルチ: ゲーム状態をFirebaseへ配信 (ゲームエンジンから呼ばれる) ───
@@ -2054,6 +2055,10 @@ function handleRyuukyoku(){
   G.honba++; // 流局本場
   G.dealerTenpai=tp.some(p=>p.wind===1); // 親テンパイかどうか（closeWin用）
   sfx('ryuu');G.phase='ryuukyoku';render();
+  // プレイヤー(index 0)がテンパイ流局なら聴牌カウント
+  if(window._notifyGameEvent && tp.some(p=>p===G.players[0])){
+    window._notifyGameEvent('tenpai',{});
+  }
   showRyuukyokuPopup(tp);
 }
 
@@ -2402,6 +2407,7 @@ function returnToPlatform(){
     houju:(window._gameStats&&window._gameStats.houju)||0,
     yakuman:(window._gameStats&&window._gameStats.yakuman)||[],
     rounds:(window._gameStats&&window._gameStats.rounds)||0,
+    tenpai:(window._gameStats&&window._gameStats.tenpai)||0,
   };
   if(window._returnToPlatform)window._returnToPlatform(result);
 }
@@ -2620,7 +2626,7 @@ const clrSes=()=>localStorage.removeItem(SES);
 // ────────────────────────────────────────────────
 // STATS HELPERS
 // ────────────────────────────────────────────────
-const mkStats=()=>({games:0,wins:0,agari:0,houju:0,rounds:0,ykm:{}});
+const mkStats=()=>({games:0,wins:0,agari:0,houju:0,rounds:0,tenpai:0,ykm:{}});
 const fmtPct=(n,d)=>d?((n/d)*100).toFixed(1)+'%':'─';
 
 // ────────────────────────────────────────────────
@@ -2696,6 +2702,7 @@ function App(){
       st.agari+=(result.agari||0);
       st.houju+=(result.houju||0);
       st.rounds+=(result.rounds||0);
+      st.tenpai+=(result.tenpai||0);
       (result.yakuman||[]).forEach(y=>{st.ykm[y]=(st.ykm[y]||0)+1;});
       const nu={...u,stats:st};
       await DB.set('user:'+user.id,nu);
@@ -3403,10 +3410,11 @@ function StatsScreen({user,onBack}){
   const agariPct=fmtPct(st.agari,st.rounds||st.games);
   const houjuPct=fmtPct(st.houju,st.rounds||st.games);
   const winPct=fmtPct(st.wins,st.games);
+  const tenpaiPct=fmtPct((st.agari||0)+(st.tenpai||0),st.rounds||st.games);
 
   return(
     <div style={S.scr}>
-      <div style={{...S.ttl,fontSize:16}}>▌ 詳細成績 ▐</div>
+      <div style={{...S.ttl,fontSize:16}}>▌ 成績詳細 ▐</div>
       <div style={{...S.sub}}>{user?.displayName}</div>
       {/* メイン統計 */}
       <div style={{...S.card,maxWidth:320}}>
@@ -3418,6 +3426,8 @@ function StatsScreen({user,onBack}){
               ['勝率',winPct,''],
               ['和了回数',st.agari,''],
               ['和了率（局）',agariPct,''],
+              ['テンパイ流局',st.tenpai||0,''],
+              ['聴牌率（局）',tenpaiPct,''],
               ['放銃回数',st.houju,''],
               ['放銃率（局）',houjuPct,''],
               ['役満上がり',Object.values(st.ykm||{}).reduce((a,b)=>a+b,0),''],
