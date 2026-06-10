@@ -2370,8 +2370,11 @@ function FirebaseSetupScreen({onDone}){
   const save=()=>{
     setErr('');
     try{
-      // JSON または JS オブジェクトリテラルを受け付ける
-      const cleaned=raw.replace(/(\w+)\s*:/g,'"$1":').replace(/'/g,'"');
+      // JS オブジェクトリテラルをJSONに変換
+      // 行頭のキー（未クォート）だけを "key": 形式に変換（値の中の:は触らない）
+      const cleaned=raw.trim()
+        .replace(/^\s*(\w+)\s*:/gm,(_,k)=>'"'+k+'":')
+        .replace(/,\s*\}/g,'}'); // 末尾カンマ除去
       const cfg=JSON.parse(cleaned);
       const required=['apiKey','authDomain','databaseURL','projectId'];
       const missing=required.filter(k=>!cfg[k]||cfg[k].startsWith('YOUR_'));
