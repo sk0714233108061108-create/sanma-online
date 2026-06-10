@@ -226,6 +226,33 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 .yakuBody::-webkit-scrollbar-thumb{background:#00ff41;}
 .yakuBody::-webkit-scrollbar-track{background:#000a00;}
 
+/* ── タブバー ── */
+.tabBar{display:flex;gap:6px;margin-bottom:6px;flex-shrink:0;}
+.tabBtn{
+  flex:1;background:transparent;border:1px solid #004400;color:#00aa44;
+  font-family:'Courier New',monospace;font-size:11px;padding:5px;cursor:pointer;letter-spacing:1px;
+}
+.tabBtn.active{background:#001800;border-color:#00ff41;color:#00ff41;text-shadow:0 0 5px #00ff41;}
+.tabBtn:active{background:rgba(0,200,68,.15);}
+
+/* ── 点数表 ── */
+.scoreSec{margin-bottom:10px;}
+.scoreTable{width:100%;border-collapse:collapse;font-size:9px;}
+.scoreTable th{
+  color:#ffcc00;text-align:center;padding:2px 1px;
+  border-bottom:1px solid #003300;font-size:8px;white-space:nowrap;
+}
+.scoreTable td{
+  color:#00ff55;text-align:center;padding:2px 1px;
+  border-bottom:1px solid #001500;font-size:9px;line-height:1.35;
+}
+.sKo{color:#88ffaa !important;}
+.sOy{color:#ffdd55 !important;}
+.sOy2{color:#ffdd55;font-size:8px;}
+.sFt{font-size:7px;color:#005520;display:block;letter-spacing:0;}
+.sMg{color:#ff8844 !important;font-size:8px;}
+.sNote{font-size:8px;color:#005520;text-align:right;padding:1px 2px 3px;}
+
 .yakuSec{margin-bottom:8px;}
 .yakuSecHd{
   font-size:10px;color:#ffcc00;text-shadow:0 0 5px #ffaa00;
@@ -392,8 +419,12 @@ window.addEventListener('error', function(e){
   <!-- YAKU LIST -->
   <div id="scYaku" class="hidden">
     <div class="yakuScreen">
-      <div class="yakuTitle">▌ 役一覧 &amp; ルール ▐</div>
-      <div class="yakuBody">
+      <div class="yakuTitle">▌ 役一覧 &amp; 点数表 ▐</div>
+      <div class="tabBar">
+        <button class="tabBtn active" id="tabBtnYaku">役一覧</button>
+        <button class="tabBtn" id="tabBtnScore">点数表</button>
+      </div>
+      <div class="yakuBody" id="tabYaku">
 
         <div class="yakuSec">
           <div class="yakuSecHd">■ 役満</div>
@@ -459,7 +490,166 @@ window.addEventListener('error', function(e){
           <div class="ruleRow"><span class="ruleKey">操作</span>牌をタップ→選択 / 再タップ→打牌</div>
         </div>
 
-      </div>
+      </div><!-- /tabYaku -->
+
+      <!-- 点数表タブ -->
+      <div class="yakuBody hidden" id="tabScore">
+
+        <div class="scoreSec">
+          <div class="yakuSecHd">■ 満貫以上（ツモ損なし）</div>
+          <table class="scoreTable">
+            <thead>
+              <tr>
+                <th>区分</th><th>翻</th>
+                <th class="sKo">子ロン</th><th class="sOy">親ロン</th>
+                <th class="sKo">子ツモ各</th><th class="sOy">親ツモ各</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>満貫</td><td>5〜</td><td class="sKo">8,000</td><td class="sOy">12,000</td><td class="sKo">4,000</td><td class="sOy">6,000</td></tr>
+              <tr><td>跳満</td><td>6〜7</td><td class="sKo">12,000</td><td class="sOy">18,000</td><td class="sKo">6,000</td><td class="sOy">9,000</td></tr>
+              <tr><td>倍満</td><td>8〜10</td><td class="sKo">16,000</td><td class="sOy">24,000</td><td class="sKo">8,000</td><td class="sOy">12,000</td></tr>
+              <tr><td>三倍満</td><td>11〜12</td><td class="sKo">24,000</td><td class="sOy">36,000</td><td class="sKo">12,000</td><td class="sOy">18,000</td></tr>
+              <tr><td>役満</td><td>13</td><td class="sKo">32,000</td><td class="sOy">48,000</td><td class="sKo">16,000</td><td class="sOy">24,000</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="scoreSec">
+          <div class="yakuSecHd">■ ロン点（上段=子ロン / 下段=親ロン）</div>
+          <table class="scoreTable">
+            <thead>
+              <tr><th>符</th><th>1翻</th><th>2翻</th><th>3翻</th><th>4翻</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>20符<span class="sFt">平和ツモ</span></td>
+                <td>—</td>
+                <td>1,300<br><span class="sOy2">2,000</span></td>
+                <td>2,600<br><span class="sOy2">3,900</span></td>
+                <td>5,200<br><span class="sOy2">7,700</span></td>
+              </tr>
+              <tr>
+                <td>25符<span class="sFt">七対子</span></td>
+                <td>—</td>
+                <td>1,600<br><span class="sOy2">2,400</span></td>
+                <td>3,200<br><span class="sOy2">4,800</span></td>
+                <td>6,400<br><span class="sOy2">9,600</span></td>
+              </tr>
+              <tr>
+                <td>30符</td>
+                <td>1,000<br><span class="sOy2">1,500</span></td>
+                <td>2,000<br><span class="sOy2">2,900</span></td>
+                <td>3,900<br><span class="sOy2">5,800</span></td>
+                <td>7,700<br><span class="sOy2">11,600</span></td>
+              </tr>
+              <tr>
+                <td>40符</td>
+                <td>1,300<br><span class="sOy2">2,000</span></td>
+                <td>2,600<br><span class="sOy2">3,900</span></td>
+                <td>5,200<br><span class="sOy2">7,700</span></td>
+                <td class="sMg">満貫</td>
+              </tr>
+              <tr>
+                <td>50符</td>
+                <td>1,600<br><span class="sOy2">2,400</span></td>
+                <td>3,200<br><span class="sOy2">4,800</span></td>
+                <td>6,400<br><span class="sOy2">9,600</span></td>
+                <td class="sMg">満貫</td>
+              </tr>
+              <tr>
+                <td>60符</td>
+                <td>2,000<br><span class="sOy2">2,900</span></td>
+                <td>3,900<br><span class="sOy2">5,800</span></td>
+                <td class="sMg">満貫</td>
+                <td class="sMg">満貫</td>
+              </tr>
+              <tr>
+                <td>70符</td>
+                <td>2,400<br><span class="sOy2">3,600</span></td>
+                <td>4,800<br><span class="sOy2">7,200</span></td>
+                <td class="sMg">満貫</td>
+                <td class="sMg">満貫</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="scoreSec">
+          <div class="yakuSecHd">■ ツモ各払い（上段=子 / 下段=親）</div>
+          <table class="scoreTable">
+            <thead>
+              <tr><th>符</th><th>1翻</th><th>2翻</th><th>3翻</th><th>4翻</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>20符</td>
+                <td>—</td>
+                <td>700<br><span class="sOy2">1,000</span></td>
+                <td>1,300<br><span class="sOy2">2,000</span></td>
+                <td>2,600<br><span class="sOy2">3,900</span></td>
+              </tr>
+              <tr>
+                <td>25符</td>
+                <td>—</td>
+                <td>800<br><span class="sOy2">1,200</span></td>
+                <td>1,600<br><span class="sOy2">2,400</span></td>
+                <td>3,200<br><span class="sOy2">4,800</span></td>
+              </tr>
+              <tr>
+                <td>30符</td>
+                <td>500<br><span class="sOy2">800</span></td>
+                <td>1,000<br><span class="sOy2">1,500</span></td>
+                <td>2,000<br><span class="sOy2">2,900</span></td>
+                <td>3,900<br><span class="sOy2">5,800</span></td>
+              </tr>
+              <tr>
+                <td>40符</td>
+                <td>700<br><span class="sOy2">1,000</span></td>
+                <td>1,300<br><span class="sOy2">2,000</span></td>
+                <td>2,600<br><span class="sOy2">3,900</span></td>
+                <td class="sMg">満貫</td>
+              </tr>
+              <tr>
+                <td>50符</td>
+                <td>800<br><span class="sOy2">1,200</span></td>
+                <td>1,600<br><span class="sOy2">2,400</span></td>
+                <td>3,200<br><span class="sOy2">4,800</span></td>
+                <td class="sMg">満貫</td>
+              </tr>
+              <tr>
+                <td>60符</td>
+                <td>1,000<br><span class="sOy2">1,500</span></td>
+                <td>2,000<br><span class="sOy2">2,900</span></td>
+                <td class="sMg">満貫</td>
+                <td class="sMg">満貫</td>
+              </tr>
+              <tr>
+                <td>70符</td>
+                <td>1,200<br><span class="sOy2">1,800</span></td>
+                <td>2,400<br><span class="sOy2">3,600</span></td>
+                <td class="sMg">満貫</td>
+                <td class="sMg">満貫</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="sNote">※ツモ損なし（子ロン/親ロン÷2）</div>
+        </div>
+
+        <div class="scoreSec">
+          <div class="yakuSecHd">■ 符計算の目安</div>
+          <div class="ruleRow"><span class="ruleKey">基本</span>30符（門前ロン：+10符 → 40符）</div>
+          <div class="ruleRow"><span class="ruleKey">平和ツモ</span>20符固定（ロンは30符）</div>
+          <div class="ruleRow"><span class="ruleKey">七対子</span>25符固定</div>
+          <div class="ruleRow"><span class="ruleKey">暗刻</span>中張牌+4 / 老頭牌+8（明刻は半分）</div>
+          <div class="ruleRow"><span class="ruleKey">カンツ</span>暗刻の4倍</div>
+          <div class="ruleRow"><span class="ruleKey">雀頭</span>役牌対子+2（自・場風+各2）</div>
+          <div class="ruleRow"><span class="ruleKey">単騎/嵌/辺張</span>+2符</div>
+          <div class="ruleRow"><span class="ruleKey">ツモ</span>+2符（平和を除く）</div>
+        </div>
+
+      </div><!-- /tabScore -->
+
       <button class="bigBtn" id="btnYakuClose">◀ もどる</button>
     </div>
   </div>
@@ -2225,13 +2415,35 @@ document.addEventListener('DOMContentLoaded',()=>{
   // 役一覧
   const bY=document.getElementById('btnYaku');
   if(bY){
-    bY.addEventListener('click',()=>showScreen('scYaku'));
-    bY.addEventListener('touchend',e=>{e.preventDefault();showScreen('scYaku');},{passive:false});
+    bY.addEventListener('click',()=>{switchTab('yaku');showScreen('scYaku');});
+    bY.addEventListener('touchend',e=>{e.preventDefault();switchTab('yaku');showScreen('scYaku');},{passive:false});
   }
   const bYC=document.getElementById('btnYakuClose');
   if(bYC){
     bYC.addEventListener('click',()=>showScreen('scTitle'));
     bYC.addEventListener('touchend',e=>{e.preventDefault();showScreen('scTitle');},{passive:false});
+  }
+  // 役一覧 ↔ 点数表 タブ切り替え
+  const tabBtnY=document.getElementById('tabBtnYaku');
+  const tabBtnS=document.getElementById('tabBtnScore');
+  const tabY=document.getElementById('tabYaku');
+  const tabS=document.getElementById('tabScore');
+  function switchTab(t){
+    if(t==='yaku'){
+      tabBtnY.classList.add('active');tabBtnS.classList.remove('active');
+      tabY.classList.remove('hidden');tabS.classList.add('hidden');
+    }else{
+      tabBtnS.classList.add('active');tabBtnY.classList.remove('active');
+      tabS.classList.remove('hidden');tabY.classList.add('hidden');
+    }
+  }
+  if(tabBtnY){
+    tabBtnY.addEventListener('click',()=>switchTab('yaku'));
+    tabBtnY.addEventListener('touchend',e=>{e.preventDefault();switchTab('yaku');},{passive:false});
+  }
+  if(tabBtnS){
+    tabBtnS.addEventListener('click',()=>switchTab('score'));
+    tabBtnS.addEventListener('touchend',e=>{e.preventDefault();switchTab('score');},{passive:false});
   }
   document.getElementById('btnRestart').addEventListener('touchend',e=>{e.preventDefault();warm();restartGame();},{passive:false});
   document.addEventListener('touchmove',e=>{
