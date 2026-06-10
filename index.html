@@ -1778,16 +1778,14 @@ function handleWin(wi,tile,type,loser){
   const ch={0:0,1:0,2:0};
   if(type==='ron'){const pts=ronPay(fu,han,w.wind===1)+G.honba*300+G.kyotaku;ch[wi]+=pts;ch[loser]-=pts;}
   else{
-    // ツモ支払い: 親ツモは全員が親レート、子ツモは親=oyaPay・子=koPay で異なる
-    const bp=basePts(fu,han);
-    const isWinDealer=(w.wind===1);
-    const oyaPay=Math.max(Math.ceil(bp/2/100)*100,500);       // 親支払いレート（最低500）
-    const koPay=isWinDealer?oyaPay:Math.max(Math.ceil(bp/4/100)*100,300); // 子支払いレート（最低300）
+    // ツモ支払い（ツモ損なし・三麻標準）
+    // 4人目不在分を2人で補完: 全員が親支払いレート(basePts/2)を払う
+    // → 子ツモ合計 = 子ロンと同額（ツモ損なし）
+    const each=Math.max(Math.ceil(basePts(fu,han)/2/100)*100,500)+G.honba*100;
     let tot=0;
     for(let p=0;p<3;p++){
       if(p===wi)continue;
-      const pay=(G.players[p].wind===1?oyaPay:koPay)+G.honba*100;
-      ch[p]-=pay;tot+=pay;
+      ch[p]-=each;tot+=each;
     }
     ch[wi]=tot+G.kyotaku;
   }
