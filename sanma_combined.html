@@ -44,10 +44,11 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 #scGame{flex:1;display:flex;flex-direction:column;min-height:0}
 .hidden{display:none!important}
 
-.infoBar{flex:0 0 38px;display:flex;align-items:center;gap:8px;padding:0 8px;background:#000800;border-bottom:1px solid #001800;font-size:12px;overflow:hidden}
+.infoBar{flex:0 0 50px;display:flex;align-items:center;gap:8px;padding:0 8px;background:#000800;border-bottom:1px solid #001800;font-size:12px;overflow:hidden}
 .iLbl{font-size:9.6px;color:#66dd88}
 .iVal{color:#ffdd55;font-size:13.2px}
-.doraWrap{display:flex;gap:1px;margin-left:auto;align-items:center}
+.doraWrap{display:flex;gap:3px;margin-left:auto;align-items:center}
+.doraLabel{font-size:9px;color:#ffaa44;font-weight:bold;writing-mode:vertical-rl;line-height:1;margin-right:1px}
 
 .cpuRow{flex:0 0 44px;display:flex;align-items:center;gap:5px;padding:0 6px;border-bottom:1px solid #001200}
 .cpuMeta{min-width:80px;font-size:12px}
@@ -113,6 +114,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 .tile.LK {opacity:.5;pointer-events:none}
 /* DORA indicator */
 .tile.DORA{border-color:#ff5500!important;box-shadow:0 0 6px rgba(255,85,0,.65)!important}
+/* DI = dora indicator tile (infoBar用大サイズ) */
+.tile.DI{width:24px;height:40px;font-size:14px;border-width:2px;border-color:#ff7700!important;box-shadow:0 0 8px rgba(255,120,0,.8),1px 2px 4px rgba(0,0,0,0.55)!important}
 
 /* ── Man tile (一萬 / 九萬) ── */
 .mt{
@@ -121,18 +124,18 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 }
 .mn{
   font-family:Georgia,'Times New Roman','Hiragino Mincho ProN',serif;
-  color:#111111;
+  color:#111111;font-weight:700;
   line-height:1.15;font-size:1.05em;
 }
 .mw{
   font-family:Georgia,'Times New Roman','Hiragino Mincho ProN',serif;
-  color:#cc1111;line-height:1;font-size:0.76em;
+  color:#cc1111;font-weight:700;line-height:1;font-size:0.76em;
   border-top:1px solid rgba(180,30,30,.3);
   padding-top:1px;margin-top:1px;
 }
 
 /* ── Z tile (字牌) ── */
-.zt{font-family:Georgia,'Times New Roman','Hiragino Mincho ProN',serif;font-size:.9em;color:#111111}
+.zt{font-family:Georgia,'Times New Roman','Hiragino Mincho ProN',serif;font-size:.9em;color:#111111;font-weight:700}
 
 /* ── Wind badge & riichi badge ── */
 .windBadge{display:inline-block;border:1px solid #225533;padding:0 3px;font-size:9.6px;color:#55cc77;margin-right:3px}
@@ -1072,64 +1075,52 @@ function pinSVG(n){
 function souSVG(n){
   const G='#1a7a1a',LG='#4aaa4a',R='#cc1111',D='#0a2a0a';
 
-  // 本物の索子に合わせたスプール（リール）型竹棒
-  // キャップ（上下の太い部分）＋ステム（細い中央部）
+  // シンプルな竹棒: 丸み付き四角 + 節(中央帯) + 光沢ハイライト
   function sp(cx,cy,bw,bh,col){
-    const cH=bh*.29,mH=bh*.42,lx=cx-bw/2,sw=bw*.52,sl=cx-bw*.26,t=cy-bh/2;
+    const lx=cx-bw/2, t=cy-bh/2, rx=(bw*.42).toFixed(1);
     return [
-      // 影
-      `<rect x="${(lx+1.5).toFixed(1)}" y="${(t+1.5).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="3" fill="${D}" opacity="0.65"/>`,
-      // 上キャップ
-      `<rect x="${lx.toFixed(1)}" y="${t.toFixed(1)}" width="${bw.toFixed(1)}" height="${cH.toFixed(1)}" rx="3" fill="${col}"/>`,
-      // 中央ステム（細い）
-      `<rect x="${sl.toFixed(1)}" y="${(t+cH).toFixed(1)}" width="${sw.toFixed(1)}" height="${mH.toFixed(1)}" fill="${col}" opacity="0.72"/>`,
-      // 下キャップ
-      `<rect x="${lx.toFixed(1)}" y="${(t+cH+mH).toFixed(1)}" width="${bw.toFixed(1)}" height="${cH.toFixed(1)}" rx="3" fill="${col}"/>`,
-      // 上面ハイライト
-      `<rect x="${lx.toFixed(1)}" y="${t.toFixed(1)}" width="${bw.toFixed(1)}" height="${(cH*.38).toFixed(1)}" rx="3" fill="white" opacity="0.13"/>`,
+      `<rect x="${(lx+1.2).toFixed(1)}" y="${(t+1.2).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${rx}" fill="#0a1a0a" opacity="0.45"/>`,
+      `<rect x="${lx.toFixed(1)}" y="${t.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${rx}" fill="${col}"/>`,
+      `<rect x="${(lx-1).toFixed(1)}" y="${(cy-bh*.11).toFixed(1)}" width="${(bw+2).toFixed(1)}" height="${(bh*.22).toFixed(1)}" rx="2" fill="#0a1a0a" opacity="0.32"/>`,
+      `<ellipse cx="${(lx+bw*.38).toFixed(1)}" cy="${(t+bh*.22).toFixed(1)}" rx="${(bw*.26).toFixed(1)}" ry="${(bh*.11).toFixed(1)}" fill="white" opacity="0.28"/>`,
     ].join('');
   }
 
-  // 1索：伝統的な鳥（孔雀/雀）デザイン
+  // 1索: 鳥 + 竹の簡略デザイン
   if(n===1){
-    return `<svg viewBox="0 0 100 100" width="90%" height="90%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35))">
-      <rect x="29" y="77" width="42" height="8" rx="3" fill="${D}" opacity="0.6"/>
-      <rect x="29" y="77" width="42" height="8" rx="3" fill="${G}" opacity="0.52"/>
-      <rect x="37" y="70" width="26" height="8" rx="2" fill="${G}" opacity="0.38"/>
-      <rect x="33" y="85" width="34" height="7" rx="2" fill="${G}" opacity="0.34"/>
-      <path d="M34,58 Q10,50 12,72 Q24,60 38,56" fill="${G}" opacity="0.55"/>
-      <path d="M34,60 Q8,56 9,76 Q22,65 38,60" fill="${G}" opacity="0.38"/>
-      <path d="M34,56 Q12,46 14,66 Q26,56 38,54" fill="${G}" opacity="0.42"/>
-      <path d="M38,50 Q18,36 25,55 Q34,47 50,50" fill="${G}" opacity="0.78"/>
-      <ellipse cx="52" cy="53" rx="18" ry="12" fill="${G}"/>
-      <ellipse cx="52" cy="53" rx="12" ry="8" fill="${LG}" opacity="0.32"/>
-      <circle cx="67" cy="43" r="12" fill="${G}"/>
-      <ellipse cx="64" cy="39" rx="5" ry="4" fill="${LG}" opacity="0.28"/>
-      <path d="M66,31 Q63,18 70,16 Q74,24 70,31" fill="${G}" opacity="0.68"/>
-      <path d="M70,31 Q75,18 80,22 Q77,29 72,32" fill="${G}" opacity="0.46"/>
-      <circle cx="72" cy="41" r="3.5" fill="${D}"/>
-      <circle cx="73.2" cy="39.8" r="1.2" fill="white" opacity="0.88"/>
-      <polygon points="79,42 91,46 79,51" fill="${LG}" opacity="0.82"/>
-      <path d="M52,65 L50,75 M46,75 L50,75 L55,73" stroke="${G}" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.7"/>
+    return `<svg viewBox="0 0 100 100" width="92%" height="92%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35))">
+      <rect x="45" y="58" width="10" height="36" rx="4" fill="${D}" opacity="0.4" transform="translate(1,1)"/>
+      <rect x="45" y="58" width="10" height="36" rx="4" fill="${G}"/>
+      <rect x="42" y="70" width="16" height="4" rx="1" fill="${D}" opacity="0.4"/>
+      <rect x="46" y="58" width="4" height="36" rx="2" fill="white" opacity="0.14"/>
+      <ellipse cx="50" cy="45" rx="22" ry="13" fill="${G}"/>
+      <path d="M28,45 Q14,36 18,56 Q32,47 40,45" fill="${G}"/>
+      <path d="M72,45 Q86,36 82,56 Q68,47 60,45" fill="${G}"/>
+      <circle cx="62" cy="30" r="13" fill="${G}"/>
+      <ellipse cx="59" cy="27" rx="7" ry="5" fill="${LG}" opacity="0.35"/>
+      <circle cx="68" cy="26" r="3.5" fill="${D}"/>
+      <circle cx="69" cy="25" r="1.3" fill="white" opacity="0.9"/>
+      <polygon points="76,28 88,31 76,35" fill="${LG}"/>
+      <path d="M60,17 Q62,7 67,10 Q65,17 61,19" fill="${G}"/>
+      <path d="M64,15 Q68,6 73,9 Q70,16 65,17" fill="${LG}" opacity="0.85"/>
     </svg>`;
   }
 
-  // 2〜9索：スプール型レイアウト
-  // p: [[cx,cy,'g'|'r'], ...]  'r'=赤アクセント（伝統的な5中央・6上段・7中央・9中央）
+  // 2〜9索: より太く見やすいサイズ
   const Lo={
-    2:{p:[[30,50,'g'],[70,50,'g']],                                                                              w:32,h:56},
-    3:{p:[[50,24,'g'],[28,70,'g'],[72,70,'g']],                                                                  w:28,h:42},
-    4:{p:[[28,26,'g'],[72,26,'g'],[28,74,'g'],[72,74,'g']],                                                      w:28,h:40},
-    5:{p:[[28,20,'g'],[72,20,'g'],[50,50,'r'],[28,80,'g'],[72,80,'g']],                                          w:26,h:34},
-    6:{p:[[28,18,'r'],[72,18,'r'],[28,50,'g'],[72,50,'g'],[28,82,'g'],[72,82,'g']],                              w:26,h:30},
-    7:{p:[[50,14,'g'],[24,40,'g'],[76,40,'g'],[50,50,'r'],[24,70,'g'],[76,70,'g'],[50,84,'g']],                  w:24,h:28},
-    8:{p:[[18,18,'g'],[50,18,'g'],[82,18,'g'],[18,50,'g'],[82,50,'g'],[18,82,'g'],[50,82,'g'],[82,82,'g']],      w:22,h:27},
-    9:{p:[[18,16,'g'],[50,16,'g'],[82,16,'g'],[18,50,'g'],[50,50,'r'],[82,50,'g'],[18,84,'g'],[50,84,'g'],[82,84,'g']],w:21,h:26},
+    2:{p:[[32,50,'g'],[68,50,'g']],                                                                               w:36,h:62},
+    3:{p:[[50,22,'g'],[30,70,'g'],[70,70,'g']],                                                                   w:32,h:46},
+    4:{p:[[30,26,'g'],[70,26,'g'],[30,74,'g'],[70,74,'g']],                                                       w:30,h:42},
+    5:{p:[[28,18,'g'],[72,18,'g'],[50,50,'r'],[28,82,'g'],[72,82,'g']],                                           w:28,h:36},
+    6:{p:[[28,16,'r'],[72,16,'r'],[28,50,'g'],[72,50,'g'],[28,84,'g'],[72,84,'g']],                               w:27,h:32},
+    7:{p:[[50,12,'g'],[24,38,'g'],[76,38,'g'],[50,50,'r'],[24,68,'g'],[76,68,'g'],[50,86,'g']],                   w:26,h:30},
+    8:{p:[[18,16,'g'],[50,16,'g'],[82,16,'g'],[18,50,'g'],[82,50,'g'],[18,84,'g'],[50,84,'g'],[82,84,'g']],       w:24,h:28},
+    9:{p:[[18,14,'g'],[50,14,'g'],[82,14,'g'],[18,50,'g'],[50,50,'r'],[82,50,'g'],[18,86,'g'],[50,86,'g'],[82,86,'g']],w:22,h:26},
   };
 
   const L=Lo[n];if(!L)return'';
-  const spools=L.p.map(([cx,cy,c])=>sp(cx,cy,L.w,L.h,c==='r'?R:G)).join('');
-  return `<svg viewBox="0 0 100 100" width="86%" height="86%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35))">${spools}</svg>`;
+  const sticks=L.p.map(([cx,cy,c])=>sp(cx,cy,L.w,L.h,c==='r'?R:G)).join('');
+  return `<svg viewBox="0 0 100 100" width="88%" height="88%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35))">${sticks}</svg>`;
 }
 
 function tileInner(t){
@@ -2280,13 +2271,13 @@ function serializeG(){
 }
 function renderInfo(){
   const wn=['東','南','西'];const rn=wn[Math.min(Math.floor(G.round/3),1)]+(G.round%3+1)+'局';
-  let dh='';G.dora.forEach(t=>{const d=mkTile(t,'S DORA');dh+=d.outerHTML;});
+  let dh='';G.dora.forEach(t=>{const d=mkTile(t,'DI');dh+=d.outerHTML;});
   document.getElementById('infoBar').innerHTML=
     `<span><span class="iLbl">局</span><span class="iVal">${rn}</span></span>`+
     `<span><span class="iLbl">本場</span><span class="iVal">${G.honba}</span></span>`+
     `<span><span class="iLbl">残</span><span class="iVal">${G.wall.length}</span></span>`+
     `<span><span class="iLbl">供託</span><span class="iVal">${G.kyotaku}</span></span>`+
-    `<span class="iLbl" style="margin-left:2px">ドラ</span><span class="doraWrap">${dh}</span>`;
+    `<div class="doraWrap"><span class="doraLabel">ド<br>ラ</span>${dh}</div>`;
 }
 function renderCpu(){
   for(let pi=1;pi<=2;pi++){
