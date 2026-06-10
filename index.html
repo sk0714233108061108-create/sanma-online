@@ -715,7 +715,7 @@ window._launchGame = function(userId, displayName, mode, multiCfg) {
   document.getElementById('platform-root').style.display = 'none';
   document.getElementById('app').style.display = '';
   window._platformUser = { id: userId, displayName: displayName, mode: mode };
-  window._gameStats   = { agari: 0, houju: 0, yakuman: [] };
+  window._gameStats   = { agari: 0, houju: 0, yakuman: [], rounds: 0 };
   window._multiCfg    = multiCfg || null;
 };
 
@@ -1577,6 +1577,7 @@ function initGame(){
 // ROUND FLOW
 // ═══════════════════════════════════════════════════
 function startRound(){
+  if(window._gameStats) window._gameStats.rounds++;
   const wall=createWall();
   const dead=wall.splice(wall.length-14,14);
   G.dora=[dead[4]];
@@ -2142,6 +2143,8 @@ function showGameOver(){
       <span>${p.score.toLocaleString()}点</span>
     </div>`).join('');
 
+  // プレイヤー（id=0）が1位かどうかを記録
+  if(window._gameStats) window._gameStats.playerWon = sorted[0].id===0;
   showScreen('scGameover');sfx(sorted[0].id===0?'tsumo':'lose');
 }
 
@@ -2333,6 +2336,7 @@ function returnToPlatform(){
     agari:(window._gameStats&&window._gameStats.agari)||0,
     houju:(window._gameStats&&window._gameStats.houju)||0,
     yakuman:(window._gameStats&&window._gameStats.yakuman)||[],
+    rounds:(window._gameStats&&window._gameStats.rounds)||0,
   };
   if(window._returnToPlatform)window._returnToPlatform(result);
 }
@@ -2551,7 +2555,7 @@ const clrSes=()=>localStorage.removeItem(SES);
 // ────────────────────────────────────────────────
 // STATS HELPERS
 // ────────────────────────────────────────────────
-const mkStats=()=>({games:0,wins:0,agari:0,houju:0,ykm:{}});
+const mkStats=()=>({games:0,wins:0,agari:0,houju:0,rounds:0,ykm:{}});
 const fmtPct=(n,d)=>d?((n/d)*100).toFixed(1)+'%':'─';
 
 // ────────────────────────────────────────────────
@@ -2626,6 +2630,7 @@ function App(){
       if(result.playerWon)st.wins++;
       st.agari+=(result.agari||0);
       st.houju+=(result.houju||0);
+      st.rounds+=(result.rounds||0);
       (result.yakuman||[]).forEach(y=>{st.ykm[y]=(st.ykm[y]||0)+1;});
       const nu={...u,stats:st};
       await DB.set('user:'+user.id,nu);
@@ -2823,7 +2828,7 @@ function HomeScreen({user,onLogout,onPlay,onStats,onLeaderboard,onLobby}){
         </div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginTop:8,textAlign:'center'}}>
           <div><div style={{fontSize:9,color:'#00aa44'}}>勝率</div><div style={{color:'#aaffcc',fontSize:13}}>{fmtPct(st.wins,st.games)}</div></div>
-          <div><div style={{fontSize:9,color:'#00aa44'}}>放銃率</div><div style={{color:'#ff9988',fontSize:13}}>{fmtPct(st.houju,st.games)}</div></div>
+          <div><div style={{fontSize:9,color:'#00aa44'}}>放銃率(局)</div><div style={{color:'#ff9988',fontSize:13}}>{fmtPct(st.houju,st.rounds||st.games)}</div></div>
         </div>
       </div>
       {/* メニュー */}
@@ -3329,8 +3334,8 @@ function ManualResultEntry({agari,houju,onAgari,onHouju,onEnd}){
 function StatsScreen({user,onBack}){
   const st=user?.stats||mkStats();
   const ykEntries=Object.entries(st.ykm||{}).sort((a,b)=>b[1]-a[1]);
-  const agariPct=fmtPct(st.agari,st.games);
-  const houjuPct=fmtPct(st.houju,st.games);
+  const agariPct=fmtPct(st.agari,st.rounds||st.games);
+  const houjuPct=fmtPct(st.houju,st.rounds||st.games);
   const winPct=fmtPct(st.wins,st.games);
 
   return(
@@ -3346,9 +3351,9 @@ function StatsScreen({user,onBack}){
               ['勝利数',st.wins,''],
               ['勝率',winPct,''],
               ['和了回数',st.agari,''],
-              ['和了率 / 局',agariPct,''],
+              ['和了率（局）',agariPct,''],
               ['放銃回数',st.houju,''],
-              ['放銃率 / 局',houjuPct,''],
+              ['放銃率（局）',houjuPct,''],
               ['役満上がり',Object.values(st.ykm||{}).reduce((a,b)=>a+b,0),''],
             ].map(([l,v])=>(
               <tr key={l}>
@@ -3406,7 +3411,7 @@ function LeaderboardScreen({user,onBack}){
     if(sort==='wins')return sb.wins-sa.wins;
     if(sort==='games')return sb.games-sa.games;
     if(sort==='winPct')return(sb.games>0?sb.wins/sb.games:0)-(sa.games>0?sa.wins/sa.games:0);
-    if(sort==='agariPct')return(sb.games>0?sb.agari/sb.games:0)-(sa.games>0?sa.agari/sa.games:0);
+    if(sort==='agariPct'){const dr=sb.rounds||sb.games,dl=sa.rounds||sa.games;return(dr>0?sb.agari/dr:0)-(dl>0?sa.agari/dl:0);}
     return 0;
   });
 
