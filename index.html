@@ -267,7 +267,22 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 
 </style>
 
-<!-- ▸ Firebase Realtime Database 初期化 -->
+<!-- ▸ Firebase 設定チェック（同期・React より先に実行） -->
+<script>
+(function(){
+  try {
+    const saved = JSON.parse(localStorage.getItem('sanma_firebase_cfg') || 'null');
+    const key = saved ? saved.apiKey : 'YOUR_API_KEY';
+    if (!key || key.startsWith('YOUR_')) {
+      window._firebaseConfigNeeded = true;
+    }
+  } catch(e) {
+    window._firebaseConfigNeeded = true;
+  }
+})();
+</script>
+
+<!-- ▸ Firebase Realtime Database 初期化（非同期モジュール） -->
 <script type="module">
   import { initializeApp }
     from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
@@ -2187,7 +2202,7 @@ window._gameActions = {
 // ═══════════════════════════════════════════════════════════════════
 // 三麻 COMPETITIVE PLATFORM  – CRT aesthetic, multiplayer + stats
 // ═══════════════════════════════════════════════════════════════════
-import { useState, useEffect, useCallback, useRef } from "react";
+const { useState, useEffect, useCallback, useRef } = React;
 
 // ────────────────────────────────────────────────
 // STORAGE LAYER
