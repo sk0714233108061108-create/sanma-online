@@ -1719,8 +1719,14 @@ function handleWin(wi,tile,type,loser){
   // プラットフォームに和了を通知
   if(window._notifyGameEvent){
     const isYM=yaku.some(y=>y.han>=13);
-    if(wi===0)window._notifyGameEvent('agari',{isYakuman:isYM,yakuName:isYM?yaku[0].name:null});
-    else window._notifyGameEvent('houju',{});
+    if(wi===0){
+      // 人間の和了（ツモ・ロン共通）
+      window._notifyGameEvent('agari',{isYakuman:isYM,yakuName:isYM?yaku[0].name:null});
+    } else if(type==='ron'){
+      // CPUのロン → 人間が放銃した場合のみ houju
+      if(loser===0) window._notifyGameEvent('houju',{});
+    }
+    // CPUのツモは放銃ではないので何も記録しない
   }
   G.lastWinner=wi;  // 連荘判定用（closeWinで参照）
   const vcall=type==='tsumo'?'ツモ':'ロン';sfx(wi===0?(type==='tsumo'?'tsumo':'ron'):'lose');voice(vcall);G.phase='win';render();
