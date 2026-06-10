@@ -1285,7 +1285,9 @@ function countDora(hand14,_melds,dorainds){
   dorainds.forEach(ind=>{const dk=tKey(doraNext(ind));n+=hand14.filter(t=>tKey(t)===dk).length;});
   return n;
 }
-function calcFu(decomp,{tsumo,selfWind=1,roundWind=1,tile=null}){
+function calcFu(decomp,{tsumo,selfWind=1,roundWind=1,tile=null,pinfu=false}){
+  // 平和は固定符（ツモ=20符、ロン=30符）
+  if(pinfu) return tsumo ? 20 : 30;
   if(!decomp)return 30;if(decomp.type==='chiitoi')return 25;
   let fu=30;if(tsumo)fu+=2;
   // 刻子符
@@ -1769,11 +1771,26 @@ function handleWin(wi,tile,type,loser){
   // 裏ドラ（リーチ者のみ、dora数と同数のpool先頭を使用）
   const uraDoraHan=w.riichi?countDora(eff,w.melds,(G.uDoraPool||[]).slice(0,G.dora.length)):0;
   const decomp=getDecomp(eff,w.melds);
-  const fu=calcFu(decomp,{tsumo:type==='tsumo',selfWind:w.wind,roundWind:G.roundWind,tile:tile||null});
+  // 平和ツモは20符固定（標準ルール）
+  const hasPinfu=yaku.some(y=>y.name==='平和');
+  const fu=calcFu(decomp,{tsumo:type==='tsumo',selfWind:w.wind,roundWind:G.roundWind,tile:tile||null,pinfu:hasPinfu});
   const han=yaku.reduce((s,y)=>s+y.han,0)+doraHan+uraDoraHan;
   const ch={0:0,1:0,2:0};
   if(type==='ron'){const pts=ronPay(fu,han,w.wind===1)+G.honba*300+G.kyotaku;ch[wi]+=pts;ch[loser]-=pts;}
-  else{const each=tsumoPay(fu,han)+G.honba*100;let tot=0;for(let p=0;p<3;p++){if(p===wi)continue;ch[p]-=each;tot+=each;}ch[wi]=tot+G.kyotaku;}
+  else{
+    // ツモ支払い: 親ツモは全員が親レート、子ツモは親=oyaPay・子=koPay で異なる
+    const bp=basePts(fu,han);
+    const isWinDealer=(w.wind===1);
+    const oyaPay=Math.max(Math.ceil(bp/2/100)*100,500);       // 親支払いレート（最低500）
+    const koPay=isWinDealer?oyaPay:Math.max(Math.ceil(bp/4/100)*100,300); // 子支払いレート（最低300）
+    let tot=0;
+    for(let p=0;p<3;p++){
+      if(p===wi)continue;
+      const pay=(G.players[p].wind===1?oyaPay:koPay)+G.honba*100;
+      ch[p]-=pay;tot+=pay;
+    }
+    ch[wi]=tot+G.kyotaku;
+  }
   for(let p=0;p<3;p++)G.players[p].score+=ch[p];G.kyotaku=0;
   w.rinshan=false;  // 嶺上開花フラグリセット
   w.wonOnce=true;  // 焼鳥フラグ解除
