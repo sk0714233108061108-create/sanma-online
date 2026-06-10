@@ -1779,9 +1779,10 @@ function handleWin(wi,tile,type,loser){
   if(type==='ron'){const pts=ronPay(fu,han,w.wind===1)+G.honba*300+G.kyotaku;ch[wi]+=pts;ch[loser]-=pts;}
   else{
     // ツモ支払い（ツモ損なし・三麻標準）
-    // 4人目不在分を2人で補完: 全員が親支払いレート(basePts/2)を払う
-    // → 子ツモ合計 = 子ロンと同額（ツモ損なし）
-    const each=Math.max(Math.ceil(basePts(fu,han)/2/100)*100,500)+G.honba*100;
+    // 親ツモ: 各basePts×3/4 × 2人 = 親ロン点（満貫→各6000、計12000）
+    // 子ツモ: 各basePts×1/2 × 2人 = 子ロン点（満貫→各4000、計8000）
+    const isDealer=w.wind===1;
+    const each=Math.max(Math.ceil(basePts(fu,han)*(isDealer?0.75:0.5)/100)*100,500)+G.honba*100;
     let tot=0;
     for(let p=0;p<3;p++){
       if(p===wi)continue;
