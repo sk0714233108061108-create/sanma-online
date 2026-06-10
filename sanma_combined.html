@@ -1691,6 +1691,8 @@ function processAfterDiscard(fromPl,tile){
     if(!pl.riichi&&pl.hand.filter(t2=>tKey(t2)===tKey(tile)).length>=3&&p===0) humanDaiminkan=true;
   }
   if(cpuRon!==-1){setTimeout(()=>handleWin(cpuRon,tile,'ron',fromPl),500);return;}
+  // リーチ中のロンは自動和了（ボタン不要）
+  if(humanRon&&G.players[0].riichi){clearClaimTimer();setTimeout(()=>handleWin(0,tile,'ron',fromPl),400);return;}
   // ゲストがクレーム可能な場合 → Firebaseで応答待ち
   const anyGuest=Object.keys(guestEligible).length>0;
   if(anyGuest&&typeof window._onGuestClaimPhase==='function'){
