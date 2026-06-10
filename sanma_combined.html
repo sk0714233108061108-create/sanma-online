@@ -1024,48 +1024,44 @@ function sortHand(h){return[...h].sort(cmpTile);}
 // ── Pin 筒子：本物の牌に合わせた花柄（マンダラ）円 ──
 
 function pinSVG(n){
-  const G='#1a3a8a',LG='#4a6acc',D='#08184a',R='#cc1111',LR='#ee4444',DR='#440000';
+  const G='#1a3a8a',LG='#5577dd',D='#06143a',R='#cc1111',LR='#ee5533',DR='#3a0000';
 
-  // 花柄装飾円を1個描画: 外リング+8枚花弁+中心ドット
+  // 伝統的な筒子：外枠+4弁十字（N/E/S/W）+中心ドット
   function circ(cx,cy,r,red){
     const mc=red?R:G, lc=red?LR:LG, dc=red?DR:D;
-    const pr=(r*.27).toFixed(1), pd=r*.50;
-    let ptl='';
-    for(let i=0;i<8;i++){
-      const a=i*45*Math.PI/180;
-      ptl+=`<circle cx="${(cx+pd*Math.sin(a)).toFixed(1)}" cy="${(cy-pd*Math.cos(a)).toFixed(1)}" r="${pr}" fill="${lc}" opacity="0.72"/>`;
+    const pr=(r*.32).toFixed(1), pd=r*.50;
+    let s='';
+    s+=`<circle cx="${(cx+.8).toFixed(1)}" cy="${(cy+.8).toFixed(1)}" r="${r.toFixed(1)}" fill="#000" opacity="0.2"/>`;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="${dc}"/>`;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${(r*.82).toFixed(1)}" fill="${mc}"/>`;
+    for(let i=0;i<4;i++){
+      const a=i*90*Math.PI/180;
+      s+=`<circle cx="${(cx+pd*Math.sin(a)).toFixed(1)}" cy="${(cy-pd*Math.cos(a)).toFixed(1)}" r="${pr}" fill="${dc}" opacity="0.62"/>`;
     }
-    return [
-      `<circle cx="${(cx+.9).toFixed(1)}" cy="${(cy+.9).toFixed(1)}" r="${r.toFixed(1)}" fill="#000" opacity="0.22"/>`,
-      `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="${dc}"/>`,
-      `<circle cx="${cx}" cy="${cy}" r="${(r*.84).toFixed(1)}" fill="${mc}"/>`,
-      ptl,
-      `<circle cx="${cx}" cy="${cy}" r="${(r*.24).toFixed(1)}" fill="${dc}"/>`,
-      `<circle cx="${cx}" cy="${cy}" r="${(r*.14).toFixed(1)}" fill="${lc}"/>`,
-    ].join('');
+    s+=`<circle cx="${cx}" cy="${cy}" r="${(r*.26).toFixed(1)}" fill="${dc}"/>`;
+    s+=`<circle cx="${cx}" cy="${cy}" r="${(r*.13).toFixed(1)}" fill="${lc}"/>`;
+    return s;
   }
 
-  // 各牌のレイアウト: p=[[cx,cy,isRed],...], r=円の半径
-  // isRed=true → 赤アクセント（本物牌の伝統的な色分けに準拠）
+  // 各牌レイアウト（画像に合わせた赤丸・青丸の配置）
   const Lo={
-    1:{p:[[50,50,false]],r:36,deco:true},                                // 1筒: 大円1個
-    2:{p:[[50,28,false],[50,72,false]],r:22},                            // 2筒: 上下2個
-    3:{p:[[66,22,false],[33,52,true],[66,78,false]],r:18},               // 3筒: 斜め3個(中が赤)
-    4:{p:[[30,28,false],[70,28,false],[30,72,false],[70,72,false]],r:17}, // 4筒: 四隅
-    5:{p:[[28,22,false],[72,22,false],[50,50,true],[28,78,false],[72,78,false]],r:16}, // 5筒: 4隅+赤中央
-    6:{p:[[28,18,true],[72,18,true],[28,50,true],[72,50,true],[28,82,true],[72,82,true]],r:14}, // 6筒: 全赤
-    7:{p:[[30,18,false],[70,18,false],[18,50,false],[50,50,true],[82,50,false],[30,82,false],[70,82,false]],r:13}, // 7筒: 2+3+2 赤中央
-    8:{p:[[20,18,false],[50,18,false],[80,18,false],[20,50,false],[80,50,true],[20,82,false],[50,82,false],[80,82,true]],r:12}, // 8筒: 3+2+3 右赤
-    9:{p:[[20,18,false],[50,18,false],[80,18,false],[20,50,false],[50,50,true],[80,50,false],[20,82,false],[50,82,false],[80,82,false]],r:12}, // 9筒: 3×3 赤中央
+    1:{p:[[50,50,false]],r:36,deco:true},
+    2:{p:[[50,28,false],[50,72,false]],r:22},
+    3:{p:[[66,22,false],[34,52,true],[66,78,false]],r:18},               // 中が赤
+    4:{p:[[30,28,false],[70,28,false],[30,72,false],[70,72,false]],r:17},
+    5:{p:[[28,22,false],[72,22,false],[50,50,true],[28,78,false],[72,78,false]],r:16}, // 中央赤
+    6:{p:[[28,18,true],[72,18,true],[28,50,false],[72,50,false],[28,82,false],[72,82,false]],r:14}, // 上2つのみ赤
+    7:{p:[[30,14,false],[70,14,false],[16,50,false],[50,50,true],[84,50,false],[30,86,false],[70,86,false]],r:13}, // 中央赤
+    8:{p:[[20,18,false],[50,18,false],[80,18,false],[20,50,false],[80,50,false],[20,82,false],[50,82,false],[80,82,false]],r:12}, // 全青
+    9:{p:[[20,18,false],[50,18,false],[80,18,false],[20,50,false],[50,50,true],[80,50,false],[20,82,false],[50,82,false],[80,82,false]],r:12}, // 中央赤
   };
 
   const L=Lo[n];if(!L)return'';
 
-  // 1筒のみ: 外側に装飾リングを追加（本物の1筒の外縁模様）
   let deco='';
   if(L.deco){
-    deco=`<circle cx="50" cy="50" r="46" fill="none" stroke="${D}" stroke-width="5" stroke-dasharray="7 3.5"/>
-          <circle cx="50" cy="50" r="46" fill="none" stroke="${LG}" stroke-width="1.5" stroke-dasharray="7 3.5" stroke-dashoffset="5.25" opacity="0.35"/>`;
+    deco=`<circle cx="50" cy="50" r="46" fill="none" stroke="${D}" stroke-width="5"/>
+          <circle cx="50" cy="50" r="43" fill="none" stroke="${LG}" stroke-width="1.5" opacity="0.4"/>`;
   }
 
   const cs=L.p.map(([cx,cy,red])=>circ(cx,cy,L.r,red)).join('');
@@ -1073,17 +1069,19 @@ function pinSVG(n){
 }
 
 function souSVG(n){
-  const G='#1a7a1a',LG='#4aaa4a',R='#cc1111',D='#0a2a0a';
+  const G='#1e8020',LG='#50b850',R='#cc1111',D='#0a2a0a';
 
-  // シンプルな竹棒: 丸み付き四角 + 節(中央帯) + 光沢ハイライト
+  // 竹棒: 本体+上節+下節（2節3区画）+光沢
   function sp(cx,cy,bw,bh,col){
-    const lx=cx-bw/2, t=cy-bh/2, rx=(bw*.42).toFixed(1);
-    return [
-      `<rect x="${(lx+1.2).toFixed(1)}" y="${(t+1.2).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${rx}" fill="#0a1a0a" opacity="0.45"/>`,
-      `<rect x="${lx.toFixed(1)}" y="${t.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${rx}" fill="${col}"/>`,
-      `<rect x="${(lx-1).toFixed(1)}" y="${(cy-bh*.11).toFixed(1)}" width="${(bw+2).toFixed(1)}" height="${(bh*.22).toFixed(1)}" rx="2" fill="#0a1a0a" opacity="0.32"/>`,
-      `<ellipse cx="${(lx+bw*.38).toFixed(1)}" cy="${(t+bh*.22).toFixed(1)}" rx="${(bw*.26).toFixed(1)}" ry="${(bh*.11).toFixed(1)}" fill="white" opacity="0.28"/>`,
-    ].join('');
+    const lx=cx-bw/2, t=cy-bh/2, rx=(bw*.38).toFixed(1);
+    const j1=t+bh*0.32, j2=t+bh*0.62;
+    let r='';
+    r+=`<rect x="${(lx+1.5).toFixed(1)}" y="${(t+1.5).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${rx}" fill="#0a1a0a" opacity="0.35"/>`;
+    r+=`<rect x="${lx.toFixed(1)}" y="${t.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${rx}" fill="${col}"/>`;
+    r+=`<rect x="${(lx-1).toFixed(1)}" y="${j1.toFixed(1)}" width="${(bw+2).toFixed(1)}" height="${(bh*.07).toFixed(1)}" rx="2" fill="#0a2a0a" opacity="0.5"/>`;
+    r+=`<rect x="${(lx-1).toFixed(1)}" y="${j2.toFixed(1)}" width="${(bw+2).toFixed(1)}" height="${(bh*.07).toFixed(1)}" rx="2" fill="#0a2a0a" opacity="0.5"/>`;
+    r+=`<ellipse cx="${(lx+bw*.38).toFixed(1)}" cy="${(t+bh*.14).toFixed(1)}" rx="${(bw*.22).toFixed(1)}" ry="${(bh*.09).toFixed(1)}" fill="white" opacity="0.3"/>`;
+    return r;
   }
 
   // 1索: 鳥 + 竹の簡略デザイン
