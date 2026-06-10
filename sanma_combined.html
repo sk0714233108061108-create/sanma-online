@@ -1350,7 +1350,7 @@ function detectYaku(hand14,openMelds,{riichi,ippatsu,doubleRiichi,tsumo,selfWind
   if(tsumo&&!isOpen)yaku.push({name:'門前清自摸和',han:1});
   if(haitei)yaku.push({name:'海底摸月',han:1});
   if(houtei)yaku.push({name:'河底撈魚',han:1});
-  if(rinshan)yaku.push({name:'嶺上開花',han:1});
+  if(rinshan&&tsumo)yaku.push({name:'嶺上開花',han:1}); // ツモ和了のみ成立（ロン不可）
 
   // 七対子
   if(decomp.type==='chiitoi'){yaku.push({name:'七対子',han:2});return yaku;}
@@ -1653,13 +1653,13 @@ function doCpuTurn(pi){
   if(!p.riichi&&!p.melds.length&&isTenpai(after)&&p.score>=1000&&!G.isLastTile){
     p.riichi=true;p.score-=1000;G.kyotaku+=1000;p.ippatsu=true;p.doubleRiichi=!G.anyDiscardMade;
     G.msg=p.name+' リーチ！';sfx('riichi');voice('リーチ');
-    setTimeout(()=>{p.hand.splice(di===null?p.hand.length-1:di,1).forEach(t=>{p.discards.push(t);p.drawn=null;sfx('disc');G.anyDiscardMade=true;G.lastDiscard=t;G.lastDiscardPl=pi;G.phase='after_discard';render();setTimeout(()=>processAfterDiscard(pi,t),200);});},400);
+    setTimeout(()=>{p.hand.splice(di===null?p.hand.length-1:di,1).forEach(t=>{p.discards.push(t);p.drawn=null;p.rinshan=false;sfx('disc');G.anyDiscardMade=true;G.lastDiscard=t;G.lastDiscardPl=pi;G.phase='after_discard';render();setTimeout(()=>processAfterDiscard(pi,t),200);});},400);
   } else {doCpuDiscard(pi,di===null?p.hand.length-1:di);}
 }
 
 function doCpuDiscard(pi,di){
   const p=G.players[pi];const t=p.hand.splice(di,1)[0];
-  p.discards.push(t);p.drawn=null;sfx('disc');
+  p.discards.push(t);p.drawn=null;p.rinshan=false;sfx('disc');
   if(p.riichi&&p.ippatsu)p.ippatsu=false; // 一発消滅
   if(!p.riichi)p.furiten=false; // 一時フリテン解除（リーチ中は維持）
   G.anyDiscardMade=true;
@@ -1936,7 +1936,7 @@ function doPlayerDiscard(){
   if(p.riichi&&G.selIdx!==drawnIdx){G.msg='リーチ中は摸切のみ';render();return;}
   const t=p.hand.splice(G.selIdx,1)[0];
   if(drawnId!==-1 && t.id!==drawnId) p.hand=sortHand(p.hand); // 手牌打ち→ツモ牌を統合ソート
-  p.discards.push(t);p.drawn=null;G.selIdx=-1;sfx('disc');
+  p.discards.push(t);p.drawn=null;p.rinshan=false;G.selIdx=-1;sfx('disc');
   if(p.riichi&&p.ippatsu)p.ippatsu=false; // 一発消滅
   if(!p.riichi)p.furiten=false; // 一時フリテン解除（打牌でリセット）
   G.anyDiscardMade=true;
@@ -1956,7 +1956,7 @@ function doPlayerRiichi(){
   const drawnIdR=p.drawn?p.drawn.id:-1;
   const t=p.hand.splice(G.selIdx,1)[0];
   if(drawnIdR!==-1 && t.id!==drawnIdR) p.hand=sortHand(p.hand); // 手牌打ちはソート統合
-  p.discards.push(t);p.drawn=null;G.selIdx=-1;
+  p.discards.push(t);p.drawn=null;p.rinshan=false;G.selIdx=-1;
   G.anyDiscardMade=true;
   G.lastDiscard=t;G.lastDiscardPl=0;G.phase='after_discard';render();
   setTimeout(()=>processAfterDiscard(0,t),500);
@@ -2891,8 +2891,9 @@ function HomeScreen({user,onLogout,onPlay,onStats,onLeaderboard,onLobby}){
             </div>
           ))}
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginTop:8,textAlign:'center'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginTop:8,textAlign:'center'}}>
           <div><div style={{fontSize:9,color:'#00aa44'}}>勝率</div><div style={{color:'#aaffcc',fontSize:13}}>{fmtPct(st.wins,st.games)}</div></div>
+          <div><div style={{fontSize:9,color:'#00aa44'}}>和了率(局)</div><div style={{color:'#ffdd88',fontSize:13}}>{fmtPct(st.agari,st.rounds||st.games)}</div></div>
           <div><div style={{fontSize:9,color:'#00aa44'}}>放銃率(局)</div><div style={{color:'#ff9988',fontSize:13}}>{fmtPct(st.houju,st.rounds||st.games)}</div></div>
         </div>
       </div>
@@ -3510,8 +3511,8 @@ function LeaderboardScreen({user,onBack}){
                   </div>
                 </div>
                 <div style={{textAlign:'right'}}>
-                  <div style={{fontSize:11,color:'#ffdd55'}}>{sort==='wins'?`${st.wins}勝`:sort==='games'?`${st.games}局`:sort==='winPct'?fmtPct(st.wins,st.games):fmtPct(st.agari,st.games)}</div>
-                  <div style={{fontSize:8,color:'#006622'}}>{st.games}局 / {st.wins}勝</div>
+                  <div style={{fontSize:11,color:'#ffdd55'}}>{sort==='wins'?`${st.wins}勝`:sort==='games'?`${st.games}対局`:sort==='winPct'?fmtPct(st.wins,st.games):fmtPct(st.agari,st.rounds||st.games)}</div>
+                  <div style={{fontSize:8,color:'#006622'}}>{st.games}対局 / {st.rounds||0}局 / {st.wins}勝</div>
                 </div>
               </div>
               {/* 役満 */}
