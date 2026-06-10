@@ -86,10 +86,11 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 ═══════════════════════════════════════ */
 .tile{
   display:inline-flex;align-items:center;justify-content:center;
-  background:#010e01;border:1px solid #004411;border-radius:2px;
+  background:#f5f0e0;border:1.5px solid #b89030;border-radius:3px;
   cursor:pointer;flex-shrink:0;overflow:hidden;
   transition:transform .1s,box-shadow .1s;
   position:relative;
+  box-shadow:1px 2px 4px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.65);
 }
 /* H = hand tile  (23×40px) */
 .tile.H {width:23px;height:40px;font-size:14px}
@@ -100,17 +101,18 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 /* FD = face-down */
 .tile.FD{
   width:19px;height:27px;font-size:0;
-  background:repeating-linear-gradient(45deg,#010e01,#010e01 3px,#001a01 3px,#001a01 6px);
-  border-color:#002208;
+  background:#1a4a1a;
+  background-image:repeating-linear-gradient(45deg,#1a4a1a,#1a4a1a 4px,#0e3010 4px,#0e3010 8px);
+  border-color:#0a2a0a;box-shadow:1px 2px 3px rgba(0,0,0,0.6);
 }
 /* SEL = selected (lifts up) */
-.tile.SEL{transform:translateY(-10px);border-color:#00ff41;box-shadow:0 0 10px rgba(0,255,65,.85);background:#001800}
+.tile.SEL{transform:translateY(-10px);border-color:#e07800;box-shadow:0 0 8px rgba(224,120,0,.85),1px 4px 6px rgba(0,0,0,0.55);background:#fff9ee}
 /* DRN = just drawn */
-.tile.DRN{border-color:#44ff88;box-shadow:0 0 5px rgba(68,255,136,.4)}
+.tile.DRN{border-color:#d06000;box-shadow:0 0 5px rgba(210,100,0,.6),1px 2px 4px rgba(0,0,0,0.55)}
 /* LK  = locked (riichi) */
-.tile.LK {opacity:.4;pointer-events:none}
+.tile.LK {opacity:.5;pointer-events:none}
 /* DORA indicator */
-.tile.DORA{border-color:#ffaa00!important;box-shadow:0 0 5px rgba(255,170,0,.5)!important}
+.tile.DORA{border-color:#ff5500!important;box-shadow:0 0 6px rgba(255,85,0,.65)!important}
 
 /* ── Man tile (一萬 / 九萬) ── */
 .mt{
@@ -119,19 +121,18 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 }
 .mn{
   font-family:Georgia,'Times New Roman','Hiragino Mincho ProN',serif;
-  color:#ffaa44;text-shadow:0 0 5px #ffaa44,0 0 10px #ff8800;
+  color:#111111;
   line-height:1.15;font-size:1.05em;
 }
 .mw{
   font-family:Georgia,'Times New Roman','Hiragino Mincho ProN',serif;
-  color:#ffdd99;line-height:1;font-size:0.76em;
-  border-top:1px solid rgba(255,170,68,.45);
+  color:#cc1111;line-height:1;font-size:0.76em;
+  border-top:1px solid rgba(180,30,30,.3);
   padding-top:1px;margin-top:1px;
-  text-shadow:0 0 3px #ffaa44;
 }
 
 /* ── Z tile (字牌) ── */
-.zt{font-family:'Courier New',monospace;font-size:.92em;color:#ccff66;text-shadow:0 0 4px #aaee44}
+.zt{font-family:Georgia,'Times New Roman','Hiragino Mincho ProN',serif;font-size:.9em;color:#111111}
 
 /* ── Wind badge & riichi badge ── */
 .windBadge{display:inline-block;border:1px solid #225533;padding:0 3px;font-size:9.6px;color:#55cc77;margin-right:3px}
@@ -1020,7 +1021,7 @@ function sortHand(h){return[...h].sort(cmpTile);}
 // ── Pin 筒子：本物の牌に合わせた花柄（マンダラ）円 ──
 
 function pinSVG(n){
-  const G='#00ff41',LG='#66ffaa',D='#003311',R='#ff5544',LR='#ff9977',DR='#440800';
+  const G='#1a3a8a',LG='#4a6acc',D='#08184a',R='#cc1111',LR='#ee4444',DR='#440000';
 
   // 花柄装飾円を1個描画: 外リング+8枚花弁+中心ドット
   function circ(cx,cy,r,red){
@@ -1065,11 +1066,11 @@ function pinSVG(n){
   }
 
   const cs=L.p.map(([cx,cy,red])=>circ(cx,cy,L.r,red)).join('');
-  return `<svg viewBox="0 0 100 100" width="86%" height="86%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 2px #00ff41)">${deco}${cs}</svg>`;
+  return `<svg viewBox="0 0 100 100" width="86%" height="86%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35))">${deco}${cs}</svg>`;
 }
 
 function souSVG(n){
-  const G='#44ffcc',LG='#88ffee',R='#ff5544',D='#003322';
+  const G='#1a7a1a',LG='#4aaa4a',R='#cc1111',D='#0a2a0a';
 
   // 本物の索子に合わせたスプール（リール）型竹棒
   // キャップ（上下の太い部分）＋ステム（細い中央部）
@@ -1091,7 +1092,7 @@ function souSVG(n){
 
   // 1索：伝統的な鳥（孔雀/雀）デザイン
   if(n===1){
-    return `<svg viewBox="0 0 100 100" width="90%" height="90%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 2px ${G})">
+    return `<svg viewBox="0 0 100 100" width="90%" height="90%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35))">
       <rect x="29" y="77" width="42" height="8" rx="3" fill="${D}" opacity="0.6"/>
       <rect x="29" y="77" width="42" height="8" rx="3" fill="${G}" opacity="0.52"/>
       <rect x="37" y="70" width="26" height="8" rx="2" fill="${G}" opacity="0.38"/>
@@ -1128,11 +1129,18 @@ function souSVG(n){
 
   const L=Lo[n];if(!L)return'';
   const spools=L.p.map(([cx,cy,c])=>sp(cx,cy,L.w,L.h,c==='r'?R:G)).join('');
-  return `<svg viewBox="0 0 100 100" width="86%" height="86%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 2px ${G})">${spools}</svg>`;
+  return `<svg viewBox="0 0 100 100" width="86%" height="86%" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.35))">${spools}</svg>`;
 }
 
 function tileInner(t){
-  if(t.suit==='z')return `<span class="zt">${Z_CH[t.num-1]}</span>`;
+  if(t.suit==='z'){
+    if(t.num===5) // 白: 空枠
+      return `<svg viewBox="0 0 100 100" width="55%" height="55%" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="12" width="76" height="76" fill="none" stroke="#555" stroke-width="9" rx="5"/></svg>`;
+    let col='#111111';
+    if(t.num===6) col='#1a7a1a'; // 発=緑
+    if(t.num===7) col='#cc1111'; // 中=赤
+    return `<span class="zt" style="color:${col}">${Z_CH[t.num-1]}</span>`;
+  }
   if(t.suit==='m'){
     const ch=t.num===1?'一':'九';
     return `<div class="mt"><span class="mn">${ch}</span><span class="mw">萬</span></div>`;
