@@ -720,7 +720,7 @@ window._launchGame = function(userId, displayName, mode, multiCfg) {
   document.getElementById('platform-root').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   window._platformUser = { id: userId, displayName: displayName, mode: mode };
-  window._gameStats   = { agari: 0, houju: 0, yakuman: [], rounds: 0, tenpai: 0 };
+  window._gameStats   = { agari: 0, houju: 0, yakuman: [], rounds: 0, tenpai: 0, wins: 0 };
   window._multiCfg    = multiCfg || null;
 };
 
@@ -2215,8 +2215,12 @@ function showGameOver(){
       <span>${p.score.toLocaleString()}点</span>
     </div>`).join('');
 
-  // プレイヤー（id=0）が1位かどうかを記録
-  if(window._gameStats) window._gameStats.playerWon = sorted[0].id===0;
+  // プレイヤー（id=0）が1位かどうかを記録（複数ゲーム累積）
+  if(window._gameStats){
+    const won=sorted[0].id===0;
+    window._gameStats.playerWon=won;
+    if(won) window._gameStats.wins=(window._gameStats.wins||0)+1;
+  }
   showScreen('scGameover');sfx(sorted[0].id===0?'tsumo':'lose');
 }
 
@@ -2405,6 +2409,7 @@ function returnToPlatform(){
   stopBGM();
   const result={
     playerWon:(window._gameStats&&window._gameStats.playerWon)||false,
+    sessionWins:(window._gameStats&&window._gameStats.wins)||0,
     agari:(window._gameStats&&window._gameStats.agari)||0,
     houju:(window._gameStats&&window._gameStats.houju)||0,
     yakuman:(window._gameStats&&window._gameStats.yakuman)||[],
@@ -2680,8 +2685,7 @@ function App(){
   const[gameArgs,setGameArgs]=useState(null);
 
   useEffect(()=>{
-    // Firebase未設定なら最初に設定画面を表示
-    if(window._firebaseConfigNeeded){setScr('firebase_setup');return;}
+    // Firebase未設定でも通常起動（localStorage モードで動作）
     (async()=>{
       const ses=getSes();
       if(ses){
@@ -2700,7 +2704,7 @@ function App(){
       const u=await DB.get('user:'+user.id)||{...user};
       const st=u.stats||mkStats();
       st.games++;
-      if(result.playerWon)st.wins++;
+      st.wins+=(result.sessionWins||0);
       st.agari+=(result.agari||0);
       st.houju+=(result.houju||0);
       st.rounds+=(result.rounds||0);
