@@ -1215,7 +1215,7 @@ function processAfterDiscard(fromPl,tile){
       const y=detectYaku(test,pl.melds,{riichi:pl.riichi,ippatsu:pl.ippatsu||false,doubleRiichi:pl.doubleRiichi||false,tsumo:false,selfWind:pl.wind,roundWind:G.roundWind,haitei:false,houtei:G.isLastTile,tenhou:false,chiihou:false,tile});
       if(y.length>0&&!isFuriten(pl)){if(p===0)humanRon=true;else if(cpuRon===-1)cpuRon=p;}
     }
-    if(pl.hand.filter(t2=>tKey(t2)===tKey(tile)).length>=2&&p===0)humanPon=true;
+    if(!pl.riichi&&pl.hand.filter(t2=>tKey(t2)===tKey(tile)).length>=2&&p===0)humanPon=true;
     if(!pl.riichi&&pl.hand.filter(t2=>tKey(t2)===tKey(tile)).length>=3&&p===0)humanDaiminkan=true;
   }
   if(cpuRon!==-1){setTimeout(()=>handleWin(cpuRon,tile,'ron',fromPl),500);return;}
