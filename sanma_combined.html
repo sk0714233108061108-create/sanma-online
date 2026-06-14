@@ -47,6 +47,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 .infoBar{flex:0 0 50px;display:flex;align-items:center;gap:8px;padding:0 8px;background:#000800;border-bottom:1px solid #001800;font-size:12px;overflow:hidden}
 .iLbl{font-size:9.6px;color:#66dd88}
 .iVal{color:#ffdd55;font-size:13.2px}
+.btnExit{padding:0 7px;height:24px;background:transparent;border:1px solid #223322;color:#446644;font-size:9px;cursor:pointer;letter-spacing:1px;font-family:'Courier New',monospace;flex-shrink:0;margin-left:4px}
+.btnExit:hover,.btnExit:active{border-color:#00cc55;color:#00ff41}
 .doraWrap{display:flex;gap:3px;margin-left:auto;align-items:center}
 .doraLabel{font-size:9px;color:#ffaa44;font-weight:bold;line-height:1.2;margin-right:3px;text-align:center}
 
@@ -2301,6 +2303,7 @@ function renderInfo(){
   const wn=['東','南','西'];const rn=wn[Math.min(Math.floor(G.round/3),1)]+(G.round%3+1)+'局';
   let dh='';G.dora.forEach(t=>{const d=mkTile(t,'DI');dh+=d.outerHTML;});
   document.getElementById('infoBar').innerHTML=
+    `<button class="btnExit" onclick="confirmExit()">×</button>`+
     `<span><span class="iLbl">局</span><span class="iVal">${rn}</span></span>`+
     `<span><span class="iLbl">本場</span><span class="iVal">${G.honba}</span></span>`+
     `<span><span class="iLbl">残</span><span class="iVal">${G.wall.length}</span></span>`+
@@ -2404,6 +2407,7 @@ function showScreen(id){
 }
 function startGame(){showScreen('scGame');initGame();startRound();startBGM();}
 function restartGame(){stopBGM();showScreen('scTitle');}
+function confirmExit(){if(confirm('タイトルに戻りますか？\n（ゲームの進行は失われます）'))restartGame();}
 function returnToPlatform(){
   stopBGM();
   const result={
