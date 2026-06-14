@@ -970,8 +970,10 @@ function detectYaku(hand14,openMelds,{riichi,ippatsu,doubleRiichi,tsumo,selfWind
   // 対々和
   if(ml.every(m=>m.type==='kotsu'))yaku.push({name:'対々和',han:2});
 
-  // 三暗刻
-  if(cml.filter(m=>m.type==='kotsu').length>=3)yaku.push({name:'三暗刻',han:2});
+  // 三暗刻：ロンで刻子を完成させた牌は明刻扱い（暗刻カウントから除外）
+  {let ck=cml.filter(m=>m.type==='kotsu').length;
+  if(!tsumo&&tile){const pre=hand14.filter(t=>tKey(t)===tKey(tile)).length-1;if(pre>=2)ck--;}
+  if(ck>=3)yaku.push({name:'三暗刻',han:2});}
 
   // 一気通貫
   for(const suit of['p','s']){
