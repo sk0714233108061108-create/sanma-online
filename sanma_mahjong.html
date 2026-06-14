@@ -826,11 +826,9 @@ function isKokushi(tiles14){
 // ═══════════════════════════════════════════════════
 // FURITEN（フリテン）
 // ═══════════════════════════════════════════════════
-// 捨て牌フリテン: 待ち牌が自分の捨て牌にある
+// 捨て牌フリテン: 待ち牌が自分の捨て牌にある（副露手にも対応）
 function isDiscardFuriten(pl){
-  const h13=pl.drawn?pl.hand.filter(t=>t.id!==pl.drawn.id):pl.hand;
-  if(h13.length!==13)return false;
-  const waits=getWaits(h13);
+  const waits=getWaitsPlayer(pl);
   const dkeys=new Set(pl.discards.map(t=>tKey(t)));
   return waits.some(w=>dkeys.has(w.suit+w.num));
 }
@@ -1070,12 +1068,35 @@ function calcFu(decomp,{tsumo,selfWind=1,roundWind=1,tile=null}){
   }
   return Math.ceil(fu/10)*10;
 }
-function basePts(fu,han){
-  if(han>=13)return 32000;if(han>=11)return 24000;if(han>=8)return 16000;if(han>=6)return 12000;if(han>=5)return 8000;
-  return Math.min(fu*Math.pow(2,han+2),8000);
+function basePts(fu,han){return fu*Math.pow(2,han+2);}
+function ronPay(fu,han,dealer){
+  if(han>=13)return dealer?48000:32000;
+  if(han>=11)return dealer?36000:24000;
+  if(han>=8) return dealer?24000:16000;
+  if(han>=6) return dealer?18000:12000;
+  if(han>=5) return dealer?12000:8000;
+  const bp=basePts(fu,han);
+  const ko=Math.min(Math.ceil(bp*4/100)*100,8000);
+  const dl=Math.min(Math.ceil(bp*6/100)*100,12000);
+  return Math.max(dealer?dl:ko,dealer?1500:1000);
 }
-function ronPay(fu,han,dealer){if(han>=13)return dealer?48000:32000;return Math.max(Math.ceil(basePts(fu,han)*(dealer?2:1)/100)*100,1000);}
-function tsumoPay(fu,han){if(han>=13)return 8000;return Math.max(Math.ceil(basePts(fu,han)/2/100)*100,500);}
+// ツモ支払い単位（和了者が親か・支払者が親かで金額が異なる）
+function tsumoUnit(fu,han,winnerIsDealer,payerIsDealer){
+  if(han>=13)return winnerIsDealer?16000:payerIsDealer?16000:8000;
+  if(han>=11)return winnerIsDealer?12000:payerIsDealer?12000:6000;
+  if(han>=8) return winnerIsDealer? 8000:payerIsDealer? 8000:4000;
+  if(han>=6) return winnerIsDealer? 6000:payerIsDealer? 6000:3000;
+  if(han>=5) return winnerIsDealer? 4000:payerIsDealer? 4000:2000;
+  const bp=basePts(fu,han);
+  if(winnerIsDealer){
+    // 親ツモ：子全員から同額（基本点×2、最大4000）
+    return Math.min(Math.max(Math.ceil(bp*2/100)*100,500),4000);
+  }
+  // 子ツモ：親から基本点×2、子から基本点×1
+  return payerIsDealer
+    ?Math.min(Math.max(Math.ceil(bp*2/100)*100,500),4000)
+    :Math.min(Math.max(Math.ceil(bp/100)*100,300),2000);
+}
 
 // ═══════════════════════════════════════════════════
 // AI
@@ -1432,7 +1453,7 @@ function handleWin(wi,tile,type,loser){
   const han=yaku.reduce((s,y)=>s+y.han,0)+doraHan+uraDoraHan;
   const ch={0:0,1:0,2:0};
   if(type==='ron'){const pts=ronPay(fu,han,w.wind===1)+G.honba*300+G.kyotaku;ch[wi]+=pts;ch[loser]-=pts;}
-  else{const each=tsumoPay(fu,han)+G.honba*100;let tot=0;for(let p=0;p<3;p++){if(p===wi)continue;ch[p]-=each;tot+=each;}ch[wi]=tot+G.kyotaku;}
+  else{let tot=0;for(let p=0;p<3;p++){if(p===wi)continue;const pay=tsumoUnit(fu,han,w.wind===1,G.players[p].wind===1)+G.honba*100;ch[p]-=pay;tot+=pay;}ch[wi]=tot+G.kyotaku;}
   for(let p=0;p<3;p++)G.players[p].score+=ch[p];G.kyotaku=0;
   w.rinshan=false;  // 嶺上開花フラグリセット
   w.wonOnce=true;  // 焼鳥フラグ解除
