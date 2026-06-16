@@ -711,8 +711,8 @@ window._launchGame = function(userId, displayName, mode, multiCfg) {
   window._platformUser = { id: userId, displayName: displayName, mode: mode };
   window._gameStats   = { agari: 0, houju: 0, yakuman: [], rounds: 0, tenpai: 0, wins: 0 };
   window._multiCfg    = multiCfg || null;
-  // 前回のゲーム画面が残らないようタイトルに戻す
-  showScreen('scTitle');
+  // 前回のゲーム画面が残らないようタイトルに戻す（_resetToTitleはIIFE内でエクスポート）
+  if(typeof window._resetToTitle==='function')window._resetToTitle();
 };
 
 // ゲームからプラットフォームに戻る
@@ -2407,6 +2407,7 @@ function showScreen(id){
   ['scTitle','scGame','scGameover','scYaku','scDice'].forEach(s=>document.getElementById(s).classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
 }
+window._resetToTitle=function(){stopBGM();showScreen('scTitle');};
 function startGame(){showScreen('scGame');initGame();startRound();startBGM();}
 function restartGame(){stopBGM();showScreen('scTitle');}
 function confirmExit(){if(confirm('タイトルに戻りますか？\n（ゲームの進行は失われます）'))restartGame();}
