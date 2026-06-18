@@ -738,7 +738,9 @@ window._notifyGameEvent = function(type, data) {
   if (!window._gameStats) return;
   if (type === 'agari') {
     window._gameStats.agari++;
-    if (data && data.isYakuman) window._gameStats.yakuman.push(data.yakuName);
+    if (data && data.isYakuman) {
+      (data.yakuNames||[data.yakuName]).filter(Boolean).forEach(n=>window._gameStats.yakuman.push(n));
+    }
   }
   if (type === 'houju')  window._gameStats.houju++;
   if (type === 'tenpai') window._gameStats.tenpai++;
@@ -2040,10 +2042,11 @@ function handleWin(wi,tile,type,loser){
   w.wonOnce=true;  // 焼鳥フラグ解除
   // プラットフォームに和了を通知
   if(window._notifyGameEvent){
-    const isYM=yaku.some(y=>y.han>=13);
+    const ymList=yaku.filter(y=>y.han>=13).map(y=>y.name);
+    const isYM=ymList.length>0;
     if(wi===0){
       // 人間の和了（ツモ・ロン共通）
-      window._notifyGameEvent('agari',{isYakuman:isYM,yakuName:isYM?yaku[0].name:null});
+      window._notifyGameEvent('agari',{isYakuman:isYM,yakuNames:ymList});
     } else if(type==='ron'){
       // CPUのロン → 人間が放銃した場合のみ houju
       if(loser===0) window._notifyGameEvent('houju',{});
@@ -2718,13 +2721,15 @@ function App(){
     if(user&&result){
       const u=await DB.get('user:'+user.id)||{...user};
       const st=u.stats||mkStats();
+      st.ykm=st.ykm||{};  // 旧データに ykm フィールドがない場合の対策
+      st.rounds=st.rounds||0; st.tenpai=st.tenpai||0;  // 旧フィールド補完
       if((result.rounds||0)>0) st.games++;
       st.wins+=(result.sessionWins||0);
       st.agari+=(result.agari||0);
       st.houju+=(result.houju||0);
       st.rounds+=(result.rounds||0);
       st.tenpai+=(result.tenpai||0);
-      (result.yakuman||[]).forEach(y=>{st.ykm[y]=(st.ykm[y]||0)+1;});
+      (result.yakuman||[]).filter(Boolean).forEach(y=>{st.ykm[y]=(st.ykm[y]||0)+1;});
       const nu={...u,stats:st};
       await DB.set('user:'+user.id,nu);
       setUser(nu);setSes({id:nu.id,displayName:nu.displayName});
@@ -3469,22 +3474,28 @@ function StatsScreen({user,onBack}){
           </tbody>
         </table>
       </div>
-      {/* 役満一覧 */}
-      {ykEntries.length>0&&<div style={{...S.card,maxWidth:320}}>
-        <div style={{fontSize:9,color:'#ffcc00',letterSpacing:2,marginBottom:8}}>── 役満上がり履歴 ──</div>
+      {/* 役満コンプリート一覧（達成済み強調・未達成は暗く） */}
+      <div style={{...S.card,maxWidth:320}}>
+        <div style={{fontSize:9,color:'#ffcc00',letterSpacing:2,marginBottom:8}}>── 役満 コンプリート ──</div>
         <table style={S.tbl}>
-          <thead><tr><th style={S.th}>役名</th><th style={{...S.th,textAlign:'right'}}>回数</th></tr></thead>
+          <thead><tr>
+            <th style={S.th}>役名</th>
+            <th style={{...S.th,textAlign:'right'}}>回数</th>
+          </tr></thead>
           <tbody>
-            {ykEntries.map(([name,cnt])=>(
-              <tr key={name}>
-                <td style={{...S.td,color:'#ffdd55'}}>{name}</td>
-                <td style={S.tdR}>{cnt}</td>
-              </tr>
-            ))}
+            {YKM_LIST.map(name=>{
+              const cnt=(st.ykm||{})[name]||0;
+              return(
+                <tr key={name} style={cnt>0?{background:'rgba(255,204,0,0.05)'}:{}}>
+                  <td style={{...S.td,color:cnt>0?'#ffdd55':'#224422'}}>{cnt>0?'★ ':''}{name}</td>
+                  <td style={{...S.tdR,color:cnt>0?'#ffdd55':'#224422'}}>{cnt>0?cnt:'—'}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-      </div>}
-      {ykEntries.length===0&&<div style={{fontSize:10,color:'#003322',textAlign:'center'}}>まだ役満の記録はありません</div>}
+        {ykEntries.length===0&&<div style={{fontSize:10,color:'#334433',textAlign:'center',marginTop:8}}>まだ役満の記録はありません</div>}
+      </div>
       <button style={{...S.btnSm}} onClick={onBack}>← もどる</button>
     </div>
   );
