@@ -13,6 +13,10 @@
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+<!-- Firebase compat SDK (type=module 不要 → iOS Safari 互換) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; background: #000900; }
@@ -309,13 +313,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;touch-action
 window._firebaseConfigNeeded = false;
 </script>
 
-<!-- ▸ Firebase Realtime Database 初期化（非同期モジュール） -->
-<script type="module">
-  import { initializeApp }
-    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-  import { getDatabase, ref, set, get, onValue, remove }
-    from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
-
+<!-- ▸ Firebase Realtime Database 初期化（compat SDK・iOS Safari 互換） -->
+<script>
   // Firebase設定（全デバイス共通・ハードコード）
   const firebaseConfig = {
     apiKey:            "AIzaSyCqPVf0qvlEp-ZmqQzCbiPq1dD48quIRwE",
@@ -330,38 +329,39 @@ window._firebaseConfigNeeded = false;
   const isConfigured = true;
 
   if (!isConfigured) {
-    // 未設定フラグ → React側でセットアップUIを表示
     window._firebaseConfigNeeded = true;
     console.info('Firebase 未設定: localStorage モードで起動');
   } else {
     try {
-      const app = initializeApp(firebaseConfig);
-      const fdb = getDatabase(app);
+      firebase.initializeApp(firebaseConfig);
+      const fdb = firebase.database();
 
       // localStorage 版 DB を Firebase 版で上書き
       window.DB = {
         async get(k) {
           try {
-            const snap = await get(ref(fdb, k.replace(/:/g, '_')));
+            const snap = await fdb.ref(k.replace(/:/g, '_')).once('value');
             return snap.exists() ? snap.val() : null;
           } catch { return null; }
         },
         async set(k, v) {
-          try { await set(ref(fdb, k.replace(/:/g, '_')), v); } catch {}
+          try { await fdb.ref(k.replace(/:/g, '_')).set(v); } catch {}
         },
         async del(k) {
-          try { await remove(ref(fdb, k.replace(/:/g, '_'))); } catch {}
+          try { await fdb.ref(k.replace(/:/g, '_')).remove(); } catch {}
         },
         async list(pfx) {
           try {
-            const snap = await get(ref(fdb, pfx.replace(/:/g, '_')));
+            const snap = await fdb.ref(pfx.replace(/:/g, '_')).once('value');
             if (!snap.exists()) return [];
             return Object.keys(snap.val()).map(k => pfx + k);
           } catch { return []; }
         },
         listen(k, cb) {
-          return onValue(ref(fdb, k.replace(/:/g, '_')),
-            snap => cb(snap.exists() ? snap.val() : null));
+          const path = k.replace(/:/g, '_');
+          const handler = snap => cb(snap.exists() ? snap.val() : null);
+          fdb.ref(path).on('value', handler);
+          return () => fdb.ref(path).off('value', handler);
         },
         unlisten(fn) { if (typeof fn === 'function') fn(); }
       };
