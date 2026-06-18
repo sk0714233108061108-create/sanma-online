@@ -2431,8 +2431,15 @@ function returnToPlatform(){
 
 // ── サイコロ親決め ──
 const DICE_FACE=['⚀','⚁','⚂','⚃','⚄','⚅'];
+let _diceRolling=false;  // 連打防止フラグ
+let _diceIv=null;        // 進行中のインターバル
+let _diceTimer=null;     // ゲーム開始タイマー
+
 function showDiceScreen(mode){
   G={...G,gameMode:mode||'tonpuu'};  // モードを保持
+  _diceRolling=false;
+  if(_diceIv){clearInterval(_diceIv);_diceIv=null;}
+  if(_diceTimer){clearTimeout(_diceTimer);_diceTimer=null;}
   showScreen('scDice');
   // リセット表示
   document.getElementById('die1').textContent='？';
@@ -2443,6 +2450,8 @@ function showDiceScreen(mode){
   document.getElementById('btnRoll').textContent='🎲 振る！';
 }
 function rollDice(){
+  if(_diceRolling)return;  // 連打・二重起動を完全にブロック
+  _diceRolling=true;
   const d1El=document.getElementById('die1');
   const d2El=document.getElementById('die2');
   const sumEl=document.getElementById('diceSum');
@@ -2454,12 +2463,12 @@ function rollDice(){
   d2El.classList.add('rolling');
   sfx('draw');
   let count=0,total=18;
-  const iv=setInterval(()=>{
+  _diceIv=setInterval(()=>{
     d1El.textContent=DICE_FACE[Math.floor(Math.random()*6)];
     d2El.textContent=DICE_FACE[Math.floor(Math.random()*6)];
     count++;
     if(count>=total){
-      clearInterval(iv);
+      clearInterval(_diceIv);_diceIv=null;
       d1El.classList.remove('rolling');
       d2El.classList.remove('rolling');
       // 最終値決定
@@ -2474,7 +2483,9 @@ function rollDice(){
       whoEl.textContent=names[dealer]+' が親！';
       sfx('pon');
       // 2秒後にゲーム開始
-      setTimeout(()=>{
+      _diceTimer=setTimeout(()=>{
+        _diceTimer=null;
+        _diceRolling=false;
         const savedMode=G.gameMode;
         showScreen('scGame');
         initGame();
