@@ -3412,11 +3412,12 @@ function MultiGameView({roomId,user,mySeat,onEnd}){
   );
 }
 
+const YKM_LIST=['国士無双','天和','地和','四暗刻','大三元','大四喜','小四喜','字一色','清老頭','大車輪','緑一色'];
+
 // 手動対局入力フォーム（ゲームHTMLが別ファイルの場合の橋渡し）
 function ManualResultEntry({agari,houju,onAgari,onHouju,onEnd}){
   const[mode,setMode]=useState('main');
   const[ykm,setYkm]=useState('');
-  const YKM_LIST=['国士無双','天和','地和','四暗刻','大三元','大四喜','小四喜','字一色','清老頭','大車輪','緑一色'];
   return(
     <div style={{display:'flex',flexDirection:'column',gap:8,alignItems:'center',maxWidth:260}}>
       {mode==='main'&&<>
