@@ -3450,6 +3450,7 @@ function ManualResultEntry({agari,houju,onAgari,onHouju,onEnd}){
 // ▸ STATS SCREEN
 // ────────────────────────────────────────────────
 function StatsScreen({user,onBack}){
+  const YKM_LIST=['国士無双','天和','地和','四暗刻','大三元','大四喜','小四喜','字一色','清老頭','大車輪','緑一色'];
   const st=user?.stats||mkStats();
   const ykEntries=Object.entries(st.ykm||{}).sort((a,b)=>b[1]-a[1]);
   const agariPct=fmtPct(st.agari,st.rounds||st.games);
