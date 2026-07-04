@@ -336,29 +336,39 @@ window._firebaseConfigNeeded = false;
       firebase.initializeApp(firebaseConfig);
       const fdb = firebase.database();
 
+      // パス変換: user:id → users/id（階層化でセキュリティルール適用可能）
+      //           その他（room等）→ _ 区切りフラット構造
+      function toFbPath(k) {
+        if (k.startsWith('user:')) return 'users/' + k.slice(5);
+        return k.replace(/:/g, '_');
+      }
+
       // localStorage 版 DB を Firebase 版で上書き
       window.DB = {
         async get(k) {
           try {
-            const snap = await fdb.ref(k.replace(/:/g, '_')).once('value');
+            const snap = await fdb.ref(toFbPath(k)).once('value');
             return snap.exists() ? snap.val() : null;
           } catch { return null; }
         },
         async set(k, v) {
-          try { await fdb.ref(k.replace(/:/g, '_')).set(v); } catch {}
+          try { await fdb.ref(toFbPath(k)).set(v); } catch {}
         },
         async del(k) {
-          try { await fdb.ref(k.replace(/:/g, '_')).remove(); } catch {}
+          try { await fdb.ref(toFbPath(k)).remove(); } catch {}
         },
         async list(pfx) {
           try {
-            const snap = await fdb.ref(pfx.replace(/:/g, '_')).once('value');
+            // user: → usersノード配下を取得（フラット構造では機能しないため特別処理）
+            const path = pfx.startsWith('user:') ? 'users'
+                       : pfx.replace(/:/g, '_').replace(/_+$/, '');
+            const snap = await fdb.ref(path).once('value');
             if (!snap.exists()) return [];
-            return Object.keys(snap.val()).map(k => pfx + k);
+            return Object.keys(snap.val()).map(id => pfx + id);
           } catch { return []; }
         },
         listen(k, cb) {
-          const path = k.replace(/:/g, '_');
+          const path = toFbPath(k);
           const handler = snap => cb(snap.exists() ? snap.val() : null);
           fdb.ref(path).on('value', handler);
           return () => fdb.ref(path).off('value', handler);
